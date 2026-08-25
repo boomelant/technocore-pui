@@ -23,7 +23,7 @@ def generate_dashboard():
 
     ranked = sorted(
         analyses.items(),
-        key=lambda x: x[1]["sybil_risk"],
+        key=lambda x: x[1]["coordination_risk"],
         reverse=True,
     )
 
@@ -35,7 +35,7 @@ def generate_dashboard():
             f"<td>{data['unique_authors']}</td>"
             f"<td>{data['repetition_ratio']:.1%}</td>"
             f"<td>{data['signal_score']:.2f}</td>"
-            f"<td>{data['sybil_risk']:.2f}</td>"
+            f"<td>{data['coordination_risk']:.2f}</td>"
             "</tr>"
         )
 
@@ -123,7 +123,7 @@ code {{
 <th>Authors</th>
 <th>Repetition</th>
 <th>Signal</th>
-<th>Sybil Risk</th>
+<th>Coordination Risk</th>
 </tr>
 </thead>
 <tbody>

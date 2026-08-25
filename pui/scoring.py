@@ -29,7 +29,7 @@ def analyze_messages(messages: list[dict[str, Any]]) -> dict[str, Any]:
         return {
             "messages": 0,
             "signal_score": 0.0,
-            "sybil_risk": 100.0,
+            "coordination_risk": 100.0,
         }
 
     authors = [str(m.get("from", "")) for m in messages]
@@ -72,7 +72,7 @@ def analyze_messages(messages: list[dict[str, Any]]) -> dict[str, Any]:
         + 0.10 * (1.0 - one_shot_ratio)
     )
 
-    sybil_risk = (
+    coordination_risk = (
         0.45 * repetition_ratio
         + 0.25 * template_concentration
         + 0.20 * one_shot_ratio
@@ -80,7 +80,7 @@ def analyze_messages(messages: list[dict[str, Any]]) -> dict[str, Any]:
     )
 
     signal_score = max(0.0, min(100.0, quality * 100.0))
-    sybil_risk = max(0.0, min(100.0, sybil_risk * 100.0))
+    coordination_risk = max(0.0, min(100.0, coordination_risk * 100.0))
 
     return {
         "messages": total,
@@ -96,5 +96,5 @@ def analyze_messages(messages: list[dict[str, Any]]) -> dict[str, Any]:
         "top_author_count": top_author_count,
         "author_concentration": round(author_concentration, 4),
         "signal_score": round(signal_score, 2),
-        "sybil_risk": round(sybil_risk, 2),
+        "coordination_risk": round(coordination_risk, 2),
     }

@@ -60,7 +60,7 @@ def main():
 
     ranked = sorted(
         room_analyses.items(),
-        key=lambda x: x[1]["sybil_risk"],
+        key=lambda x: x[1]["coordination_risk"],
         reverse=True,
     )
 
@@ -68,7 +68,7 @@ def main():
         print(
             f"{room:20} "
             f"signal={data['signal_score']:6.2f} "
-            f"sybil={data['sybil_risk']:6.2f} "
+            f"coord={data['coordination_risk']:6.2f} "
             f"repeat={data['repetition_ratio']:6.2%}"
         )
 

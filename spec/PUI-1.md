@@ -52,7 +52,7 @@ Every generated report contains:
 
 PUI signals are heuristic.
 
-A high coordination or Sybil-risk score DOES NOT prove:
+A high coordination-risk score DOES NOT prove:
 
 - malicious activity,
 - common ownership,
