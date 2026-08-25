@@ -48,3 +48,14 @@ def test_single_active_author_is_not_one_shot_campaign():
     result = analyze_messages(messages)
 
     assert result["one_shot_ratio"] == 0.0
+
+
+def test_near_duplicate_campaign_is_not_treated_as_fully_organic():
+    messages = [
+        msg(f"did:key:variant{i}", f"Agent node alive. Meta participation logged. Variant {i}")
+        for i in range(20)
+    ]
+
+    result = analyze_messages(messages)
+
+    assert result["coordination_risk"] > 40

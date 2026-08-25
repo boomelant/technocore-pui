@@ -12,7 +12,7 @@ def normalize_text(text: str) -> str:
     text = text.lower().strip()
     text = URL_RE.sub("<url>", text)
     text = re.sub(r"\\b[0-9a-f]{16,}\\b", "<hex>", text)
-    text = re.sub(r"\\b\\d{4,}\\b", "<number>", text)
+    text = re.sub(r"(?<![0-9])[0-9]+(?![0-9])", "<number>", text)
     text = re.sub(r"\\s+", " ", text)
     return text
 
