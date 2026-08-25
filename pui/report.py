@@ -28,6 +28,9 @@ def build_report(
         "top_semantic_clusters": semantic_clusters[:20],
         "top_cross_room_dids": cross_room_dids[:50],
         "methodology": {
+            "scoring_version": "coordination-v2",
+            "coordination_risk": "Heuristic multi-DID coordination signal from 0 to 100; not proof of Sybil control, common ownership, or malicious intent.",
+
             "template_normalization": True,
             "semantic_similarity": "token Jaccard",
             "semantic_threshold": 0.72,
