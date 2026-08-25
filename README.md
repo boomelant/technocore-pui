@@ -32,7 +32,7 @@ The scanner reads live Technocore rooms and measures:
 - one-shot DID ratio,
 - message repetition,
 - template concentration,
-- semantic coordination clusters,
+- lexical coordination clusters,
 - cross-room DID activity,
 - recurring DIDs across snapshots,
 - recurring templates across time.
@@ -61,8 +61,6 @@ from:
 
 ## Run
 
-The project intentionally has minimal system impact.
-
 Requirements:
 
 - macOS
@@ -72,37 +70,64 @@ Requirements:
 
 Run:
 
-```bash
-./run.sh
+    ./run.sh
 
 The application:
 
-reads selected live Technocore rooms,
-analyzes coordination signals,
-stores a snapshot,
-compares recent history,
-generates a signed report,
-updates the local dashboard.
-Project layout
-pui/
-  identity.py
-  technocore.py
-  protocol.py
-  scoring.py
-  clusters.py
-  coordination.py
-  graph.py
-  history.py
-  report.py
-  dashboard.py
-  main.py
+1. reads selected live Technocore rooms,
+2. analyzes coordination signals,
+3. stores a snapshot,
+4. compares recent history,
+5. generates a signed report,
+6. updates the local dashboard.
 
-spec/
-  PUI-1.md
+## Verify a report
 
-data/
-  local snapshots and reports
-Security
+Every generated report can be verified offline.
+
+Example:
+
+    python -m pui.verify data/pui-report-YYYYMMDDTHHMMSSZ.json
+
+A valid report returns:
+
+    REPORT VERIFIED
+    author: did:key:...
+    hash: sha256:...
+    signature: valid
+
+Verification checks:
+
+- SHA-256 integrity of the report payload,
+- Ed25519 signature validity,
+- consistency between the signature and the public `did:key`.
+
+The verifier does not require access to the private signing seed.
+
+## Project layout
+
+    pui/
+      identity.py
+      technocore.py
+      protocol.py
+      scoring.py
+      clusters.py
+      coordination.py
+      graph.py
+      history.py
+      report.py
+      snapshot.py
+      dashboard.py
+      verify.py
+      main.py
+
+    spec/
+      PUI-1.md
+
+    data/
+      local snapshots and reports
+
+## Security
 
 The private Ed25519 seed is not stored in the repository.
 
@@ -110,29 +135,29 @@ It remains in macOS Keychain.
 
 Generated reports contain only the public DID and cryptographic signatures.
 
-Interpretation
+## Interpretation
 
 PUI scores are heuristic signals.
 
 They do not prove:
 
-malicious intent,
-common ownership,
-Sybil control,
-identity fraud,
-airdrop farming.
+- malicious intent,
+- common ownership,
+- Sybil control,
+- identity fraud,
+- airdrop farming.
 
 The project detects patterns worth investigating.
 
-Longer-term direction
+## Longer-term direction
 
 The scanner is only the observational first stage.
 
 The intended PUI protocol introduces signed:
 
-REQUEST
-RESPONSE
-RECEIPT
+- REQUEST
+- RESPONSE
+- RECEIPT
 
 objects.
 
@@ -140,11 +165,11 @@ A receiving agent can cryptographically acknowledge that another DID delivered s
 
 This enables a future capability graph:
 
-DID -> interaction -> independent receipt -> capability evidence
+`DID -> interaction -> independent receipt -> capability evidence`
 
 instead of a global self-declared reputation score.
 
-Status
+## Status
 
 Experimental prototype.
 
