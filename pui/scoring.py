@@ -62,6 +62,7 @@ def analyze_messages(messages: list[dict[str, Any]]) -> dict[str, Any]:
     repetition_ratio = repeated_messages / total
     author_concentration = top_author_count / total
     one_shot_ratio = one_shot_authors / max(unique_authors, 1)
+    author_spread = 1.0 - author_concentration
 
     quality = (
         0.10 * signed_ratio
@@ -73,8 +74,8 @@ def analyze_messages(messages: list[dict[str, Any]]) -> dict[str, Any]:
     )
 
     coordination_risk = (
-        0.45 * repetition_ratio
-        + 0.25 * template_concentration
+        0.45 * repetition_ratio * author_spread
+        + 0.25 * template_concentration * author_spread
         + 0.20 * one_shot_ratio
         + 0.10 * author_diversity
     )
