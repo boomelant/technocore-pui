@@ -41,7 +41,7 @@ def generate_dashboard():
 
     cluster_rows = []
 
-    for item in report["top_semantic_clusters"][:10]:
+    for item in report["top_lexical_clusters"][:10]:
         cluster_rows.append(
             "<tr>"
             f"<td>{item['did_count']}</td>"
@@ -109,7 +109,7 @@ code {{
 <div class="card">
 <h2>Network Summary</h2>
 <p>Rooms scanned: {report['summary']['rooms_scanned']}</p>
-<p>Semantic clusters: {report['summary']['semantic_clusters']}</p>
+<p>Lexical clusters: {report['summary']['lexical_clusters']}</p>
 <p>Cross-room DIDs: {report['summary']['cross_room_dids']}</p>
 </div>
 

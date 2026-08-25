@@ -25,7 +25,7 @@ def jaccard(a: set[str], b: set[str]) -> float:
     return len(a & b) / len(union)
 
 
-def find_semantic_clusters(
+def find_lexical_clusters(
     room_messages: dict[str, list[dict[str, Any]]],
     threshold: float = 0.72,
     min_dids: int = 4,

@@ -10,7 +10,7 @@ from .protocol import canonical_json, sha256_text
 def build_report(
     rooms,
     room_analyses,
-    semantic_clusters,
+    lexical_clusters,
     cross_room_dids,
 ):
     report = {
@@ -21,18 +21,18 @@ def build_report(
         "rooms": rooms,
         "summary": {
             "rooms_scanned": len(rooms),
-            "semantic_clusters": len(semantic_clusters),
+            "lexical_clusters": len(lexical_clusters),
             "cross_room_dids": len(cross_room_dids),
         },
         "room_analysis": room_analyses,
-        "top_semantic_clusters": semantic_clusters[:20],
+        "top_lexical_clusters": lexical_clusters[:20],
         "top_cross_room_dids": cross_room_dids[:50],
         "methodology": {
             "scoring_version": "coordination-v2",
             "coordination_risk": "Heuristic multi-DID coordination signal from 0 to 100; not proof of Sybil control, common ownership, or malicious intent.",
 
             "template_normalization": True,
-            "semantic_similarity": "token Jaccard",
+            "lexical_similarity": "token Jaccard",
             "semantic_threshold": 0.72,
             "minimum_cluster_dids": 4,
             "important_note": (

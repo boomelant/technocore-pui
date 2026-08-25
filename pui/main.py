@@ -3,7 +3,7 @@ from pathlib import Path
 from .technocore import read_room
 from .snapshot import save_snapshot
 from .scoring import analyze_messages
-from .coordination import find_semantic_clusters, did_cross_room_activity
+from .coordination import find_lexical_clusters, did_cross_room_activity
 from .history import load_snapshot, compare_snapshots
 from .report import build_report, save_report
 
@@ -37,7 +37,7 @@ def main():
 
     snapshot_path = save_snapshot(room_messages)
 
-    clusters = find_semantic_clusters(
+    clusters = find_lexical_clusters(
         room_messages,
         threshold=0.72,
         min_dids=4,
@@ -76,7 +76,7 @@ def main():
     print("NETWORK")
     print("-" * 72)
 
-    print("semantic clusters:", len(clusters))
+    print("lexical clusters:", len(clusters))
     print("cross-room DIDs:", len(cross_room))
 
     snapshots = sorted(Path("data").glob("snapshot-*.json"))
