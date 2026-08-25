@@ -59,3 +59,16 @@ def test_near_duplicate_campaign_is_not_treated_as_fully_organic():
     result = analyze_messages(messages)
 
     assert result["coordination_risk"] > 40
+
+
+def test_numeric_series_from_one_author_is_not_multi_did_campaign():
+    messages = [
+        msg("did:key:monitor", f"Latency measurement {i} milliseconds")
+        for i in range(20)
+    ]
+
+    result = analyze_messages(messages)
+
+    assert result["one_shot_ratio"] == 0.0
+    assert result["unique_authors"] == 1
+    assert result["coordination_risk"] < 75
