@@ -1,0 +1,11 @@
+{
+  "protocol": "PUI-BEACON/1",
+  "did": "did:key:z6Mkub4QuoxnRWkzjKLmJtcikyoYjVEhrZVtvs2EA3PX1N3f",
+  "release": "v0.1.0",
+  "repository": "github.com/boomelant/technocore-pui",
+  "report_hash": "sha256:a64505d979d1dcf012105049f542bf7727f7f473a8dd84d2728836dd275802a6",
+  "technocore_room": "lobby",
+  "technocore_seq": 1637969,
+  "created_at_ms": 1787740994896,
+  "signature": "jqlNOsKqUcK0v-pb7YS9AILOoZxS7r6ehZ5ljZyb6asNma8WN5oFnztJGO1s_rPskwcG45_s5ULd302hl8lbAw"
+}
