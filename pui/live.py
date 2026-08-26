@@ -2,7 +2,7 @@ import threading
 import time
 
 from pui.chronicle import follow_room
-from pui.chronicle_status import main as write_status
+from pui.chronicle_status import write_status
 
 
 ROOMS = [
@@ -19,7 +19,7 @@ def status_loop(interval=60):
         time.sleep(interval)
 
         try:
-            write_status()
+            write_status(publish=False)
         except Exception as exc:
             print("STATUS ERROR:", exc)
 
