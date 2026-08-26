@@ -1,6 +1,6 @@
 {
   "protocol": "PUI-CHRONICLE-STATUS/1",
-  "generated_at": "2026-08-26T11:57:04.548781+00:00",
+  "generated_at": "2026-08-26T12:48:43.208001+00:00",
   "observer": {
     "status": "online",
     "room_count": 5
@@ -27,20 +27,20 @@
     {
       "room": "meta",
       "first_seq": 62477,
-      "last_seq": 68577,
-      "records": 2461,
+      "last_seq": 68579,
+      "records": 2463,
       "gaps": 7,
-      "historical_coverage": 40.34,
-      "epoch_coverage": 36.84
+      "historical_coverage": 40.36,
+      "epoch_coverage": 36.86
     },
     {
       "room": "flop-network",
       "first_seq": 34312,
-      "last_seq": 36241,
-      "records": 1416,
+      "last_seq": 36274,
+      "records": 1449,
       "gaps": 4,
-      "historical_coverage": 73.37,
-      "epoch_coverage": 66.52
+      "historical_coverage": 73.82,
+      "epoch_coverage": 67.3
     },
     {
       "room": "inference-agents",
