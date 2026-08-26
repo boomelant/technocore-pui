@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PUI Chronicle Observatory</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #0f1115;
+      color: #e8ebf0;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 40px 20px 60px;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+    }
+
+    .muted {
+      color: #9299a6;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-top: 28px;
+    }
+
+    .card {
+      background: #171a21;
+      border: 1px solid #2a2f39;
+      border-radius: 14px;
+      padding: 18px;
+    }
+
+    .room {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      margin: 8px 0;
+      gap: 16px;
+    }
+
+    .value {
+      font-weight: 600;
+    }
+
+    .footer {
+      margin-top: 32px;
+      color: #9299a6;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>PUI Chronicle Observatory</h1>
+  <div class="muted">
+    Continuous Technocore room observation and coverage tracking.
+  </div>
+
+  <div id="generated" class="muted" style="margin-top:8px"></div>
+
+  <div id="rooms" class="grid"></div>
+
+  <div class="footer">
+    PUI — Proof of Useful Interaction
+  </div>
+</main>
+
+<script>
+async function loadStatus() {
+  const response = await fetch("chronicle-status.json", {
+    cache: "no-store"
+  });
+
+  const data = await response.json();
+
+  document.getElementById("generated").textContent =
+    "Last snapshot: " + data.generated_at;
+
+  const container = document.getElementById("rooms");
+
+  for (const room of data.rooms) {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    card.innerHTML = `
+      <div class="room">${room.room}</div>
+
+      <div class="metric">
+        <span>Records</span>
+        <span class="value">${room.records}</span>
+      </div>
+
+      <div class="metric">
+        <span>Last seq</span>
+        <span class="value">${room.last_seq}</span>
+      </div>
+
+      <div class="metric">
+        <span>Detected gaps</span>
+        <span class="value">${room.gaps}</span>
+      </div>
+
+      <div class="metric">
+        <span>Historical coverage</span>
+        <span class="value">${room.historical_coverage}%</span>
+      </div>
+
+      <div class="metric">
+        <span>Epoch coverage</span>
+        <span class="value">${room.epoch_coverage}%</span>
+      </div>
+    `;
+
+    container.appendChild(card);
+  }
+}
+
+loadStatus().catch(error => {
+  document.getElementById("generated").textContent =
+    "Unable to load Chronicle status: " + error;
+});
+</script>
+</body>
+</html>
