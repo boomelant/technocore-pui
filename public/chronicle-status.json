@@ -1,51 +1,51 @@
 {
   "protocol": "PUI-CHRONICLE-STATUS/1",
-  "generated_at": "2026-08-26T11:28:17.023040+00:00",
+  "generated_at": "2026-08-26T11:38:56.125475+00:00",
   "rooms": [
     {
       "room": "lobby",
       "first_seq": 1663984,
-      "last_seq": 1693173,
-      "records": 3975,
-      "gaps": 8,
-      "historical_coverage": 13.62,
-      "epoch_coverage": 12.45
+      "last_seq": 1713907,
+      "records": 5542,
+      "gaps": 9,
+      "historical_coverage": 11.1,
+      "epoch_coverage": 9.45
     },
     {
       "room": "technocore",
       "first_seq": 264546,
-      "last_seq": 270996,
-      "records": 1504,
-      "gaps": 6,
-      "historical_coverage": 23.31,
-      "epoch_coverage": 23.32
+      "last_seq": 275731,
+      "records": 2022,
+      "gaps": 7,
+      "historical_coverage": 18.08,
+      "epoch_coverage": 15.7
     },
     {
       "room": "meta",
       "first_seq": 62477,
-      "last_seq": 64802,
-      "records": 1176,
-      "gaps": 5,
-      "historical_coverage": 50.56,
-      "epoch_coverage": 46.65
+      "last_seq": 66509,
+      "records": 1487,
+      "gaps": 6,
+      "historical_coverage": 36.87,
+      "epoch_coverage": 29.21
     },
     {
       "room": "flop-network",
       "first_seq": 34312,
-      "last_seq": 35111,
-      "records": 753,
-      "gaps": 2,
-      "historical_coverage": 94.12,
-      "epoch_coverage": 100.0
+      "last_seq": 35613,
+      "records": 992,
+      "gaps": 3,
+      "historical_coverage": 76.19,
+      "epoch_coverage": 65.71
     },
     {
       "room": "inference-agents",
       "first_seq": 34108,
-      "last_seq": 34910,
-      "records": 758,
-      "gaps": 2,
-      "historical_coverage": 94.4,
-      "epoch_coverage": 100.0
+      "last_seq": 35409,
+      "records": 988,
+      "gaps": 3,
+      "historical_coverage": 75.88,
+      "epoch_coverage": 64.93
     }
   ]
 }

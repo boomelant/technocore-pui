@@ -8,6 +8,7 @@ from pui.chronicle import coverage_stats, live_coverage_stats
 DATA_DIR = Path("data/chronicle")
 OUTPUT = Path("data/chronicle-status.json")
 PUBLIC_OUTPUT = Path("public/chronicle-status.json")
+DOCS_OUTPUT = Path("docs/chronicle-status.json")
 
 ROOMS = [
     "lobby",
@@ -66,9 +67,17 @@ def main():
         encoding="utf-8",
     )
 
+    DOCS_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+
+    DOCS_OUTPUT.write_text(
+        rendered,
+        encoding="utf-8",
+    )
+
     print("CHRONICLE STATUS WRITTEN")
     print("local:", OUTPUT)
     print("public:", PUBLIC_OUTPUT)
+    print("pages:", DOCS_OUTPUT)
 
     for room in status["rooms"]:
         print(
