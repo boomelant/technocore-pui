@@ -25,9 +25,23 @@ def get_json(path: str) -> dict:
     return json.loads(get_text(path))
 
 
-def read_room(room: str, limit: int = 20) -> dict:
+def read_room(
+    room: str,
+    limit: int = 20,
+    since: int | None = None,
+    wait: float | None = None,
+) -> dict:
     room_q = urllib.parse.quote(room, safe="")
-    return get_json(f"/r/{room_q}?format=json&limit={limit}")
+
+    query = f"format=json&limit={limit}"
+
+    if since is not None:
+        query += f"&since={since}"
+
+    if wait is not None:
+        query += f"&wait={wait}"
+
+    return get_json(f"/r/{room_q}?{query}")
 
 
 def list_rooms(limit: int = 50) -> dict:
