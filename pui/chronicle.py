@@ -7,6 +7,7 @@ from pui.technocore import read_room
 
 
 DATA_DIR = Path("data/chronicle")
+PRINT_LOCK = threading.Lock()
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -318,23 +319,24 @@ def follow_room(room, wait=5):
             session_gap_count,
         )
 
-        print(
-            room,
-            "new:",
-            len(new_records),
-            "last_seq:",
-            state["last_seq"],
-            "total:",
-            state["records"],
-            "gaps:",
-            len(state["gaps"]),
-            "historical:",
-            f'{stats["coverage"]:.2f}%',
-            "epoch:",
-            f'{live_stats["coverage"]:.2f}%',
-            "session:",
-            f'{session_stats["coverage"]:.2f}%',
-        )
+        with PRINT_LOCK:
+            print(
+                room,
+                "new:",
+                len(new_records),
+                "last_seq:",
+                state["last_seq"],
+                "total:",
+                state["records"],
+                "gaps:",
+                len(state["gaps"]),
+                "historical:",
+                f'{stats["coverage"]:.2f}%',
+                "epoch:",
+                f'{live_stats["coverage"]:.2f}%',
+                "session:",
+                f'{session_stats["coverage"]:.2f}%',
+            )
 
 
 def main():
