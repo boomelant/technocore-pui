@@ -47,9 +47,15 @@ def room_status(room):
 
 
 def build_status():
+    generated_at = datetime.now(timezone.utc)
+
     return {
         "protocol": "PUI-CHRONICLE-STATUS/1",
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": generated_at.isoformat(),
+        "observer": {
+            "status": "online",
+            "room_count": len(ROOMS),
+        },
         "rooms": [room_status(room) for room in ROOMS],
     }
 

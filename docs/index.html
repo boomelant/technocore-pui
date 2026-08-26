@@ -72,6 +72,7 @@
   </div>
 
   <div id="generated" class="muted" style="margin-top:8px"></div>
+  <div id="observer" style="margin-top:12px;font-weight:700"></div>
 
   <div id="rooms" class="grid"></div>
 
@@ -88,8 +89,25 @@ async function loadStatus() {
 
   const data = await response.json();
 
+  const generated = new Date(data.generated_at);
+  const now = new Date();
+  const ageSeconds = Math.max(
+    0,
+    Math.floor((now - generated) / 1000)
+  );
+
+  const staleAfterSeconds = 5400;
+  const isOnline = ageSeconds <= staleAfterSeconds;
+
   document.getElementById("generated").textContent =
-    "Last snapshot: " + data.generated_at;
+    "Last snapshot: " + data.generated_at +
+    " | age: " + ageSeconds + "s";
+
+  document.getElementById("observer").textContent =
+    "Observer: " +
+    (isOnline ? "ONLINE" : "STALE") +
+    " | rooms: " +
+    (data.observer?.room_count ?? data.rooms.length);
 
   const container = document.getElementById("rooms");
 
