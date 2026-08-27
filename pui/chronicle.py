@@ -252,16 +252,35 @@ def follow_room(room, wait=5):
     session_start_seq = None
     session_start_records = None
     session_gap_count = None
+    retry_delay = 5
 
     while True:
         state = load_state(room)
 
-        payload = read_room(
-            room,
-            limit=200,
-            since=state["last_seq"],
-            wait=wait,
-        )
+        try:
+            payload = read_room(
+                room,
+                limit=200,
+                since=state["last_seq"],
+                wait=wait,
+            )
+            retry_delay = 5
+
+        except Exception as exc:
+            with PRINT_LOCK:
+                print(
+                    room,
+                    "ERROR:",
+                    type(exc).__name__,
+                    str(exc),
+                    "| retry in",
+                    retry_delay,
+                    "seconds",
+                )
+
+            time.sleep(retry_delay)
+            retry_delay = min(retry_delay * 2, 60)
+            continue
 
         records = payload.get("messages", [])
 
