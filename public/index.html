@@ -73,6 +73,7 @@
 
   <div id="generated" class="muted" style="margin-top:8px"></div>
   <div id="observer" style="margin-top:12px;font-weight:700"></div>
+  <div id="agent" style="margin-top:8px;font-weight:700"></div>
 
   <div id="rooms" class="grid"></div>
 
@@ -108,6 +109,37 @@ async function loadStatus() {
     (isOnline ? "ONLINE" : "STALE") +
     " | rooms: " +
     (data.observer?.room_count ?? data.rooms.length);
+
+  const agent = data.agent || {};
+  let agentStatus = agent.status || "unknown";
+
+  if (agent.last_scan_at) {
+    const agentAge =
+      Math.max(
+        0,
+        Math.floor(
+          (now - new Date(agent.last_scan_at)) / 1000
+        )
+      );
+
+    if (agentAge > 120) {
+      agentStatus = "stale";
+    }
+
+    document.getElementById("agent").textContent =
+      "Agent: " +
+      agentStatus.toUpperCase() +
+      " | scanned: " +
+      (agent.total_scanned ?? 0) +
+      " | queued: " +
+      (agent.total_queued ?? 0) +
+      " | last scan: " +
+      agentAge +
+      "s ago";
+  } else {
+    document.getElementById("agent").textContent =
+      "Agent: " + agentStatus.toUpperCase();
+  }
 
   const container = document.getElementById("rooms");
 

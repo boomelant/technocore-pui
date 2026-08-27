@@ -11,6 +11,7 @@ DATA_DIR = Path("data/chronicle")
 LOCAL_OUTPUT = Path("data/chronicle-status.json")
 PUBLIC_OUTPUT = Path("public/chronicle-status.json")
 DOCS_OUTPUT = Path("docs/chronicle-status.json")
+AGENT_HEALTH = Path("data/agent-health.json")
 
 ROOMS = [
     "lobby",
@@ -49,6 +50,26 @@ def room_status(room):
 def build_status():
     generated_at = datetime.now(timezone.utc)
 
+    agent = {
+        "status": "unknown",
+        "last_scan_at": None,
+        "total_scanned": 0,
+        "total_queued": 0,
+    }
+
+    if AGENT_HEALTH.exists():
+        try:
+            raw = json.loads(AGENT_HEALTH.read_text(encoding="utf-8"))
+            agent = {
+                "status": "online",
+                "last_scan_at": raw.get("last_scan_at"),
+                "started_at": raw.get("started_at"),
+                "total_scanned": raw.get("total_scanned", 0),
+                "total_queued": raw.get("total_queued", 0),
+            }
+        except Exception:
+            agent["status"] = "error"
+
     return {
         "protocol": "PUI-CHRONICLE-STATUS/1",
         "generated_at": generated_at.isoformat(),
@@ -56,6 +77,7 @@ def build_status():
             "status": "online",
             "room_count": len(ROOMS),
         },
+        "agent": agent,
         "rooms": [room_status(room) for room in ROOMS],
     }
 
