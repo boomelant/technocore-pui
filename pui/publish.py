@@ -1,4 +1,5 @@
 import subprocess
+import time
 import sys
 
 from pui.chronicle_status import write_status
@@ -75,12 +76,24 @@ def main():
         print(commit.stderr.strip())
         raise SystemExit(commit.returncode)
 
-    push = run("git", "push")
+    push = None
 
-    if push.returncode != 0:
+    for attempt, delay in enumerate((5, 15, 30), start=1):
+        push = run("git", "push")
+
+        if push.returncode == 0:
+            break
+
+        print("GIT PUSH FAILED", f"attempt {attempt}/3")
         print(push.stdout.strip())
         print(push.stderr.strip())
-        raise SystemExit(push.returncode)
+
+        if attempt < 3:
+            print("retry in", delay, "seconds")
+            time.sleep(delay)
+
+    if push is None or push.returncode != 0:
+        raise SystemExit(push.returncode if push else 1)
 
     print("PUBLIC STATUS PUBLISHED")
 
