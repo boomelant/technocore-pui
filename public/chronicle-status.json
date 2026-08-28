@@ -1,62 +1,62 @@
 {
   "protocol": "PUI-CHRONICLE-STATUS/1",
-  "generated_at": "2026-08-28T07:07:52.775346+00:00",
+  "generated_at": "2026-08-28T08:07:55.057563+00:00",
   "observer": {
     "status": "online",
     "room_count": 5
   },
   "agent": {
     "status": "online",
-    "last_scan_at": "2026-08-28T07:07:45.355904+00:00",
+    "last_scan_at": "2026-08-28T08:07:42.262750+00:00",
     "started_at": "2026-08-27T07:52:42.316439+00:00",
-    "total_scanned": 493325,
-    "total_queued": 38
+    "total_scanned": 617993,
+    "total_queued": 64
   },
   "rooms": [
     {
       "room": "lobby",
       "first_seq": 1663984,
-      "last_seq": 6354899,
-      "records": 834553,
-      "gaps": 125,
-      "historical_coverage": 17.79,
-      "epoch_coverage": 17.8
+      "last_seq": 6453743,
+      "records": 933162,
+      "gaps": 126,
+      "historical_coverage": 19.48,
+      "epoch_coverage": 19.5
     },
     {
       "room": "technocore",
       "first_seq": 264546,
-      "last_seq": 1147096,
-      "records": 140081,
+      "last_seq": 1162068,
+      "records": 155053,
       "gaps": 42,
-      "historical_coverage": 15.87,
-      "epoch_coverage": 15.84
+      "historical_coverage": 17.28,
+      "epoch_coverage": 17.25
     },
     {
       "room": "meta",
       "first_seq": 62477,
-      "last_seq": 435073,
-      "records": 67182,
+      "last_seq": 441967,
+      "records": 74076,
       "gaps": 39,
-      "historical_coverage": 18.03,
-      "epoch_coverage": 17.91
+      "historical_coverage": 19.52,
+      "epoch_coverage": 19.41
     },
     {
       "room": "flop-network",
       "first_seq": 34312,
-      "last_seq": 90978,
-      "records": 19220,
+      "last_seq": 93209,
+      "records": 21451,
       "gaps": 29,
-      "historical_coverage": 33.92,
-      "epoch_coverage": 33.37
+      "historical_coverage": 36.42,
+      "epoch_coverage": 35.92
     },
     {
       "room": "inference-agents",
       "first_seq": 34108,
-      "last_seq": 87766,
-      "records": 18697,
+      "last_seq": 89963,
+      "records": 20894,
       "gaps": 27,
-      "historical_coverage": 34.84,
-      "epoch_coverage": 34.27
+      "historical_coverage": 37.41,
+      "epoch_coverage": 36.88
     }
   ]
 }
