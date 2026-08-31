@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from .action import execute_reviewed_message
+from .receipts import append_receipt
 
 
 @dataclass
@@ -11,8 +12,12 @@ class ReviewRequest:
 
 
 def execute_review_request(request: ReviewRequest):
-    return execute_reviewed_message(
+    receipt = execute_reviewed_message(
         request.room,
         request.text,
         approved=request.approved,
     )
+
+    append_receipt(receipt)
+
+    return receipt
