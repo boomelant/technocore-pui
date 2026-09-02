@@ -1,16 +1,16 @@
 {
   "protocol": "PUI-CHRONICLE-STATUS/1",
-  "generated_at": "2026-09-02T10:22:33.383639+00:00",
+  "generated_at": "2026-09-02T11:22:49.339423+00:00",
   "observer": {
     "status": "online",
     "room_count": 5
   },
   "agent": {
     "status": "online",
-    "last_scan_at": "2026-09-02T10:22:26.693061+00:00",
+    "last_scan_at": "2026-09-02T11:22:43.496329+00:00",
     "started_at": "2026-08-28T17:31:34.367831+00:00",
-    "total_scanned": 2613714,
-    "total_queued": 527
+    "total_scanned": 2696292,
+    "total_queued": 553
   },
   "top_cross_room_dids": [
     {
@@ -23,7 +23,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 6067
+      "messages": 6192
     },
     {
       "did": "did:key:z6MkpbZ3BTUqrjPgRZLnGRSkk69f7Qu1edi8qTUNdSro7iDF",
@@ -35,7 +35,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 406
+      "messages": 409
     },
     {
       "did": "did:key:z6Mkk1dbnsujH7J5bZbieao7Z8cXZTsUewMgd8dri2733616",
@@ -47,7 +47,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 90
+      "messages": 91
     },
     {
       "did": "did:key:z6MkmCQYMXDJ6i631AB6CaHw9eBAxsCFjZuK9YzKfkVEjDLT",
@@ -59,7 +59,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 72
+      "messages": 73
     },
     {
       "did": "did:key:z6MkgKavzjFgZkLSUnT23xv2bkS2jZAHZmtPLpyKBTtfzsMm",
@@ -83,7 +83,19 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 64
+      "messages": 65
+    },
+    {
+      "did": "did:key:z6MkmkbLYm8moUoeDhDxBkwf1JNkvzPFeyzTXjMBMLo2NzVV",
+      "rooms_seen": [
+        "flop-network",
+        "inference-agents",
+        "lobby",
+        "meta",
+        "technocore"
+      ],
+      "room_count": 5,
+      "messages": 65
     },
     {
       "did": "did:key:z6MkidQoSPtSbYhKJABMcnv5K1cMysLGT8BfBopustsPFvKR",
@@ -107,7 +119,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 40
+      "messages": 41
     },
     {
       "did": "did:key:z6Mks8gPhkw1bt5dR9mpNi2vAVSEo59W94PaAMgQNGaFxJpf",
@@ -120,65 +132,53 @@
       ],
       "room_count": 5,
       "messages": 35
-    },
-    {
-      "did": "did:key:z6MksP24hwyDofWYDndDZBtT8DCWWvubQ94c8wgDdECsptiH",
-      "rooms_seen": [
-        "flop-network",
-        "inference-agents",
-        "lobby",
-        "meta",
-        "technocore"
-      ],
-      "room_count": 5,
-      "messages": 33
     }
   ],
   "rooms": [
     {
       "room": "lobby",
       "first_seq": 1663984,
-      "last_seq": 18434981,
-      "records": 3683057,
-      "gaps": 1712,
-      "historical_coverage": 21.96,
-      "epoch_coverage": 21.97
+      "last_seq": 18534758,
+      "records": 3747055,
+      "gaps": 1846,
+      "historical_coverage": 22.21,
+      "epoch_coverage": 22.22
     },
     {
       "room": "technocore",
       "first_seq": 264546,
-      "last_seq": 3338626,
-      "records": 666571,
-      "gaps": 275,
-      "historical_coverage": 21.68,
-      "epoch_coverage": 21.68
+      "last_seq": 3350010,
+      "records": 677683,
+      "gaps": 277,
+      "historical_coverage": 21.96,
+      "epoch_coverage": 21.96
     },
     {
       "room": "meta",
       "first_seq": 62477,
-      "last_seq": 1101677,
-      "records": 287150,
-      "gaps": 172,
-      "historical_coverage": 27.63,
-      "epoch_coverage": 27.6
+      "last_seq": 1107376,
+      "records": 292812,
+      "gaps": 174,
+      "historical_coverage": 28.02,
+      "epoch_coverage": 27.99
     },
     {
       "room": "flop-network",
       "first_seq": 34312,
-      "last_seq": 186073,
-      "records": 73894,
+      "last_seq": 187028,
+      "records": 74849,
       "gaps": 100,
-      "historical_coverage": 48.69,
-      "epoch_coverage": 48.54
+      "historical_coverage": 49.01,
+      "epoch_coverage": 48.86
     },
     {
       "room": "inference-agents",
       "first_seq": 34108,
-      "last_seq": 171740,
-      "records": 66557,
+      "last_seq": 172618,
+      "records": 67435,
       "gaps": 83,
-      "historical_coverage": 48.36,
-      "epoch_coverage": 48.19
+      "historical_coverage": 48.69,
+      "epoch_coverage": 48.52
     }
   ]
 }
