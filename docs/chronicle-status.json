@@ -1,16 +1,16 @@
 {
   "protocol": "PUI-CHRONICLE-STATUS/1",
-  "generated_at": "2026-09-02T06:21:32.977295+00:00",
+  "generated_at": "2026-09-02T07:21:45.289126+00:00",
   "observer": {
     "status": "online",
     "room_count": 5
   },
   "agent": {
     "status": "online",
-    "last_scan_at": "2026-09-02T06:21:30.688486+00:00",
+    "last_scan_at": "2026-09-02T07:21:39.644568+00:00",
     "started_at": "2026-08-28T17:31:34.367831+00:00",
-    "total_scanned": 2291473,
-    "total_queued": 447
+    "total_scanned": 2380000,
+    "total_queued": 467
   },
   "top_cross_room_dids": [
     {
@@ -23,7 +23,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 5554
+      "messages": 5703
     },
     {
       "did": "did:key:z6MkpbZ3BTUqrjPgRZLnGRSkk69f7Qu1edi8qTUNdSro7iDF",
@@ -35,7 +35,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 388
+      "messages": 390
     },
     {
       "did": "did:key:z6Mkk1dbnsujH7J5bZbieao7Z8cXZTsUewMgd8dri2733616",
@@ -47,7 +47,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 84
+      "messages": 86
     },
     {
       "did": "did:key:z6MkgKavzjFgZkLSUnT23xv2bkS2jZAHZmtPLpyKBTtfzsMm",
@@ -71,7 +71,19 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 62
+      "messages": 65
+    },
+    {
+      "did": "did:key:z6MkuzU5geHHGBge8voFNCS82TcpSAVJbGJbdjWZrQuojsQf",
+      "rooms_seen": [
+        "flop-network",
+        "inference-agents",
+        "lobby",
+        "meta",
+        "technocore"
+      ],
+      "room_count": 5,
+      "messages": 57
     },
     {
       "did": "did:key:z6MkidQoSPtSbYhKJABMcnv5K1cMysLGT8BfBopustsPFvKR",
@@ -86,18 +98,6 @@
       "messages": 57
     },
     {
-      "did": "did:key:z6MkuzU5geHHGBge8voFNCS82TcpSAVJbGJbdjWZrQuojsQf",
-      "rooms_seen": [
-        "flop-network",
-        "inference-agents",
-        "lobby",
-        "meta",
-        "technocore"
-      ],
-      "room_count": 5,
-      "messages": 56
-    },
-    {
       "did": "did:key:z6MkmrzdY3jTdPrstqZuDfU38Ytp63RyzAQotyfnuKf49whm",
       "rooms_seen": [
         "flop-network",
@@ -107,7 +107,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 36
+      "messages": 37
     },
     {
       "did": "did:key:z6Mks8gPhkw1bt5dR9mpNi2vAVSEo59W94PaAMgQNGaFxJpf",
@@ -138,47 +138,47 @@
     {
       "room": "lobby",
       "first_seq": 1663984,
-      "last_seq": 18101934,
-      "records": 3446690,
-      "gaps": 1371,
-      "historical_coverage": 20.97,
-      "epoch_coverage": 20.97
+      "last_seq": 18190573,
+      "records": 3511430,
+      "gaps": 1452,
+      "historical_coverage": 21.25,
+      "epoch_coverage": 21.25
     },
     {
       "room": "technocore",
       "first_seq": 264546,
-      "last_seq": 3281204,
-      "records": 611455,
-      "gaps": 256,
-      "historical_coverage": 20.27,
-      "epoch_coverage": 20.27
+      "last_seq": 3297070,
+      "records": 627113,
+      "gaps": 261,
+      "historical_coverage": 20.68,
+      "epoch_coverage": 20.68
     },
     {
       "room": "meta",
       "first_seq": 62477,
-      "last_seq": 1076047,
-      "records": 261879,
+      "last_seq": 1082787,
+      "records": 268619,
       "gaps": 167,
-      "historical_coverage": 25.84,
-      "epoch_coverage": 25.8
+      "historical_coverage": 26.33,
+      "epoch_coverage": 26.29
     },
     {
       "room": "flop-network",
       "first_seq": 34312,
-      "last_seq": 183043,
-      "records": 70864,
+      "last_seq": 183704,
+      "records": 71525,
       "gaps": 100,
-      "historical_coverage": 47.65,
-      "epoch_coverage": 47.49
+      "historical_coverage": 47.88,
+      "epoch_coverage": 47.72
     },
     {
       "room": "inference-agents",
       "first_seq": 34108,
-      "last_seq": 168677,
-      "records": 63494,
+      "last_seq": 169325,
+      "records": 64142,
       "gaps": 83,
-      "historical_coverage": 47.18,
-      "epoch_coverage": 47.01
+      "historical_coverage": 47.44,
+      "epoch_coverage": 47.26
     }
   ]
 }
