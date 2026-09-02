@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from pui.chronicle import coverage_stats, live_coverage_stats
+from pui.cross_room import top_cross_room_dids
 
 
 DATA_DIR = Path("data/chronicle")
@@ -78,6 +79,7 @@ def build_status():
             "room_count": len(ROOMS),
         },
         "agent": agent,
+        "top_cross_room_dids": top_cross_room_dids(limit=10),
         "rooms": [room_status(room) for room in ROOMS],
     }
 

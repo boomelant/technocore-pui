@@ -75,6 +75,8 @@
   <div id="observer" style="margin-top:12px;font-weight:700"></div>
   <div id="agent" style="margin-top:8px;font-weight:700"></div>
 
+  <div id="cross-room" style="margin-top:16px"></div>
+
   <div id="rooms" class="grid"></div>
 
   <div class="footer">
@@ -139,6 +141,23 @@ async function loadStatus() {
   } else {
     document.getElementById("agent").textContent =
       "Agent: " + agentStatus.toUpperCase();
+  }
+
+  const crossRoom = data.top_cross_room_dids || [];
+  const crossRoomEl = document.getElementById("cross-room");
+
+  if (crossRoom.length) {
+    const lines = crossRoom.slice(0, 5).map((row) =>
+      row.did.slice(0, 18) +
+      "... | rooms: " +
+      row.room_count +
+      " | messages: " +
+      row.messages
+    );
+
+    crossRoomEl.innerHTML =
+      "<strong>Top cross-room DID activity</strong><br>" +
+      lines.join("<br>");
   }
 
   const container = document.getElementById("rooms");
