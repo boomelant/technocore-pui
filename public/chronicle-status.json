@@ -1,16 +1,16 @@
 {
   "protocol": "PUI-CHRONICLE-STATUS/1",
-  "generated_at": "2026-09-03T08:00:46.036997+00:00",
+  "generated_at": "2026-09-03T09:00:59.952582+00:00",
   "observer": {
     "status": "online",
     "room_count": 5
   },
   "agent": {
     "status": "online",
-    "last_scan_at": "2026-09-03T08:00:34.554265+00:00",
+    "last_scan_at": "2026-09-03T09:00:41.018621+00:00",
     "started_at": "2026-08-28T17:31:34.367831+00:00",
-    "total_scanned": 3004369,
-    "total_queued": 617
+    "total_scanned": 3184351,
+    "total_queued": 644
   },
   "top_cross_room_dids": [
     {
@@ -23,7 +23,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 6992
+      "messages": 7559
     },
     {
       "did": "did:key:z6MkpbZ3BTUqrjPgRZLnGRSkk69f7Qu1edi8qTUNdSro7iDF",
@@ -35,7 +35,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 428
+      "messages": 433
     },
     {
       "did": "did:key:z6Mkk1dbnsujH7J5bZbieao7Z8cXZTsUewMgd8dri2733616",
@@ -47,7 +47,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 99
+      "messages": 106
     },
     {
       "did": "did:key:z6MkmCQYMXDJ6i631AB6CaHw9eBAxsCFjZuK9YzKfkVEjDLT",
@@ -59,7 +59,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 76
+      "messages": 79
     },
     {
       "did": "did:key:z6MkuzU5geHHGBge8voFNCS82TcpSAVJbGJbdjWZrQuojsQf",
@@ -71,7 +71,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 72
+      "messages": 75
     },
     {
       "did": "did:key:z6MkgKavzjFgZkLSUnT23xv2bkS2jZAHZmtPLpyKBTtfzsMm",
@@ -83,7 +83,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 72
+      "messages": 73
     },
     {
       "did": "did:key:z6MkmkbLYm8moUoeDhDxBkwf1JNkvzPFeyzTXjMBMLo2NzVV",
@@ -95,7 +95,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 69
+      "messages": 72
     },
     {
       "did": "did:key:z6MkidQoSPtSbYhKJABMcnv5K1cMysLGT8BfBopustsPFvKR",
@@ -119,7 +119,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 49
+      "messages": 53
     },
     {
       "did": "did:key:z6MkmrzdY3jTdPrstqZuDfU38Ytp63RyzAQotyfnuKf49whm",
@@ -131,54 +131,54 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 42
+      "messages": 44
     }
   ],
   "rooms": [
     {
       "room": "lobby",
       "first_seq": 1663984,
-      "last_seq": 20351059,
-      "records": 3969627,
-      "gaps": 2048,
-      "historical_coverage": 21.24,
-      "epoch_coverage": 21.25
+      "last_seq": 20498183,
+      "records": 4116254,
+      "gaps": 2050,
+      "historical_coverage": 21.86,
+      "epoch_coverage": 21.86
     },
     {
       "room": "technocore",
       "first_seq": 264546,
-      "last_seq": 3637794,
-      "records": 726545,
+      "last_seq": 3661537,
+      "records": 750288,
       "gaps": 317,
-      "historical_coverage": 21.54,
-      "epoch_coverage": 21.54
+      "historical_coverage": 22.09,
+      "epoch_coverage": 22.09
     },
     {
       "room": "meta",
       "first_seq": 62477,
-      "last_seq": 1216937,
-      "records": 315063,
+      "last_seq": 1223115,
+      "records": 321241,
       "gaps": 203,
-      "historical_coverage": 27.29,
-      "epoch_coverage": 27.26
+      "historical_coverage": 27.68,
+      "epoch_coverage": 27.65
     },
     {
       "room": "flop-network",
       "first_seq": 34312,
-      "last_seq": 205694,
-      "records": 82348,
+      "last_seq": 207476,
+      "records": 84130,
       "gaps": 116,
-      "historical_coverage": 48.05,
-      "epoch_coverage": 47.91
+      "historical_coverage": 48.58,
+      "epoch_coverage": 48.45
     },
     {
       "room": "inference-agents",
       "first_seq": 34108,
-      "last_seq": 190158,
-      "records": 74493,
+      "last_seq": 191896,
+      "records": 76231,
       "gaps": 97,
-      "historical_coverage": 47.74,
-      "epoch_coverage": 47.59
+      "historical_coverage": 48.31,
+      "epoch_coverage": 48.16
     }
   ]
 }
