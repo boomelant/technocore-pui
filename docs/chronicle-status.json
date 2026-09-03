@@ -1,16 +1,16 @@
 {
   "protocol": "PUI-CHRONICLE-STATUS/1",
-  "generated_at": "2026-09-03T13:02:12.654261+00:00",
+  "generated_at": "2026-09-03T14:02:33.431179+00:00",
   "observer": {
     "status": "online",
     "room_count": 5
   },
   "agent": {
     "status": "online",
-    "last_scan_at": "2026-09-03T13:02:07.513223+00:00",
+    "last_scan_at": "2026-09-03T14:02:24.718918+00:00",
     "started_at": "2026-08-28T17:31:34.367831+00:00",
-    "total_scanned": 3790702,
-    "total_queued": 746
+    "total_scanned": 3935144,
+    "total_queued": 770
   },
   "top_cross_room_dids": [
     {
@@ -23,7 +23,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 9726
+      "messages": 10255
     },
     {
       "did": "did:key:z6MkpbZ3BTUqrjPgRZLnGRSkk69f7Qu1edi8qTUNdSro7iDF",
@@ -35,7 +35,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 461
+      "messages": 468
     },
     {
       "did": "did:key:z6Mkk1dbnsujH7J5bZbieao7Z8cXZTsUewMgd8dri2733616",
@@ -47,7 +47,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 133
+      "messages": 140
     },
     {
       "did": "did:key:z6MkmCQYMXDJ6i631AB6CaHw9eBAxsCFjZuK9YzKfkVEjDLT",
@@ -59,7 +59,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 87
+      "messages": 89
     },
     {
       "did": "did:key:z6MkuzU5geHHGBge8voFNCS82TcpSAVJbGJbdjWZrQuojsQf",
@@ -71,7 +71,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 84
+      "messages": 86
     },
     {
       "did": "did:key:z6MkmkbLYm8moUoeDhDxBkwf1JNkvzPFeyzTXjMBMLo2NzVV",
@@ -83,7 +83,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 80
+      "messages": 82
     },
     {
       "did": "did:key:z6MkgKavzjFgZkLSUnT23xv2bkS2jZAHZmtPLpyKBTtfzsMm",
@@ -95,7 +95,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 76
+      "messages": 77
     },
     {
       "did": "did:key:z6MktJpBNiUQABQzsftrBNZZKsnBpjh6CNVvLifRFF9TRf5J",
@@ -107,7 +107,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 64
+      "messages": 65
     },
     {
       "did": "did:key:z6MkidQoSPtSbYhKJABMcnv5K1cMysLGT8BfBopustsPFvKR",
@@ -131,54 +131,54 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 47
+      "messages": 48
     }
   ],
   "rooms": [
     {
       "room": "lobby",
       "first_seq": 1663984,
-      "last_seq": 20973228,
-      "records": 4588575,
-      "gaps": 2069,
-      "historical_coverage": 23.76,
-      "epoch_coverage": 23.77
+      "last_seq": 21086105,
+      "records": 4700748,
+      "gaps": 2074,
+      "historical_coverage": 24.2,
+      "epoch_coverage": 24.21
     },
     {
       "room": "technocore",
       "first_seq": 264546,
-      "last_seq": 3756072,
-      "records": 844744,
+      "last_seq": 3779688,
+      "records": 868360,
       "gaps": 318,
-      "historical_coverage": 24.19,
-      "epoch_coverage": 24.2
+      "historical_coverage": 24.7,
+      "epoch_coverage": 24.7
     },
     {
       "room": "meta",
       "first_seq": 62477,
-      "last_seq": 1247839,
-      "records": 345965,
+      "last_seq": 1253389,
+      "records": 351515,
       "gaps": 203,
-      "historical_coverage": 29.19,
-      "epoch_coverage": 29.16
+      "historical_coverage": 29.52,
+      "epoch_coverage": 29.49
     },
     {
       "room": "flop-network",
       "first_seq": 34312,
-      "last_seq": 214815,
-      "records": 91469,
+      "last_seq": 216787,
+      "records": 93441,
       "gaps": 116,
-      "historical_coverage": 50.67,
-      "epoch_coverage": 50.55
+      "historical_coverage": 51.21,
+      "epoch_coverage": 51.09
     },
     {
       "room": "inference-agents",
       "first_seq": 34108,
-      "last_seq": 198814,
-      "records": 83149,
+      "last_seq": 200668,
+      "records": 85003,
       "gaps": 97,
-      "historical_coverage": 50.48,
-      "epoch_coverage": 50.35
+      "historical_coverage": 51.03,
+      "epoch_coverage": 50.9
     }
   ]
 }
