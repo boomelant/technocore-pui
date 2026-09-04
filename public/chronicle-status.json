@@ -1,16 +1,16 @@
 {
   "protocol": "PUI-CHRONICLE-STATUS/1",
-  "generated_at": "2026-09-04T10:37:34.997144+00:00",
+  "generated_at": "2026-09-04T11:37:55.624079+00:00",
   "observer": {
     "status": "online",
     "room_count": 5
   },
   "agent": {
     "status": "online",
-    "last_scan_at": "2026-09-04T10:37:15.548892+00:00",
+    "last_scan_at": "2026-09-04T11:37:50.886801+00:00",
     "started_at": "2026-08-28T17:31:34.367831+00:00",
-    "total_scanned": 4534185,
-    "total_queued": 886
+    "total_scanned": 4664410,
+    "total_queued": 908
   },
   "top_cross_room_dids": [
     {
@@ -23,7 +23,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 11866
+      "messages": 12052
     },
     {
       "did": "did:key:z6MkpbZ3BTUqrjPgRZLnGRSkk69f7Qu1edi8qTUNdSro7iDF",
@@ -35,7 +35,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 503
+      "messages": 508
     },
     {
       "did": "did:key:z6Mkk1dbnsujH7J5bZbieao7Z8cXZTsUewMgd8dri2733616",
@@ -47,7 +47,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 169
+      "messages": 174
     },
     {
       "did": "did:key:z6MkmCQYMXDJ6i631AB6CaHw9eBAxsCFjZuK9YzKfkVEjDLT",
@@ -59,7 +59,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 102
+      "messages": 105
     },
     {
       "did": "did:key:z6MkuzU5geHHGBge8voFNCS82TcpSAVJbGJbdjWZrQuojsQf",
@@ -71,7 +71,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 100
+      "messages": 102
     },
     {
       "did": "did:key:z6MktJpBNiUQABQzsftrBNZZKsnBpjh6CNVvLifRFF9TRf5J",
@@ -83,7 +83,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 92
+      "messages": 95
     },
     {
       "did": "did:key:z6MkmkbLYm8moUoeDhDxBkwf1JNkvzPFeyzTXjMBMLo2NzVV",
@@ -95,7 +95,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 91
+      "messages": 93
     },
     {
       "did": "did:key:z6MkgKavzjFgZkLSUnT23xv2bkS2jZAHZmtPLpyKBTtfzsMm",
@@ -107,7 +107,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 84
+      "messages": 85
     },
     {
       "did": "did:key:z6MkidQoSPtSbYhKJABMcnv5K1cMysLGT8BfBopustsPFvKR",
@@ -131,54 +131,54 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 52
+      "messages": 53
     }
   ],
   "rooms": [
     {
       "room": "lobby",
       "first_seq": 1663984,
-      "last_seq": 23020895,
-      "records": 5135671,
-      "gaps": 2171,
-      "historical_coverage": 24.05,
-      "epoch_coverage": 24.05
+      "last_seq": 23123618,
+      "records": 5233813,
+      "gaps": 2188,
+      "historical_coverage": 24.39,
+      "epoch_coverage": 24.4
     },
     {
       "room": "technocore",
       "first_seq": 264546,
-      "last_seq": 4223238,
-      "records": 986291,
-      "gaps": 358,
-      "historical_coverage": 24.91,
-      "epoch_coverage": 24.92
+      "last_seq": 4247580,
+      "records": 1009654,
+      "gaps": 362,
+      "historical_coverage": 25.35,
+      "epoch_coverage": 25.35
     },
     {
       "room": "meta",
       "first_seq": 62477,
-      "last_seq": 1365647,
-      "records": 382013,
+      "last_seq": 1370907,
+      "records": 387273,
       "gaps": 227,
-      "historical_coverage": 29.31,
-      "epoch_coverage": 29.29
+      "historical_coverage": 29.6,
+      "epoch_coverage": 29.58
     },
     {
       "room": "flop-network",
       "first_seq": 34312,
-      "last_seq": 227438,
-      "records": 101865,
+      "last_seq": 228903,
+      "records": 103330,
       "gaps": 123,
-      "historical_coverage": 52.75,
-      "epoch_coverage": 52.64
+      "historical_coverage": 53.1,
+      "epoch_coverage": 53.0
     },
     {
       "room": "inference-agents",
       "first_seq": 34108,
-      "last_seq": 209844,
-      "records": 92477,
+      "last_seq": 211295,
+      "records": 93928,
       "gaps": 99,
-      "historical_coverage": 52.62,
-      "epoch_coverage": 52.5
+      "historical_coverage": 53.01,
+      "epoch_coverage": 52.89
     }
   ]
 }
