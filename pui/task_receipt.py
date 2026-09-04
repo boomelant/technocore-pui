@@ -1,5 +1,6 @@
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
+import hashlib
 
 from .task import Task
 from .executor import TaskResult
@@ -20,11 +21,24 @@ class TaskReceipt:
 
 
 def verify_task_result(task: Task, result: TaskResult) -> TaskReceipt:
-    verified = (
+    verified = False
+
+    if (
         result.task_id == task.task_id
         and result.task_type == task.task_type
         and result.status == "completed"
-    )
+        and task.task_type == "text_analysis"
+    ):
+        text = task.payload.get("text")
+
+        if isinstance(text, str):
+            expected_output = {
+                "characters": len(text),
+                "words": len(text.split()),
+                "sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+            }
+
+            verified = result.output == expected_output
 
     return TaskReceipt(
         task_id=task.task_id,
