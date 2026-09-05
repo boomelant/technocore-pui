@@ -4,7 +4,21 @@ from .task_ledger import append_task_receipt, receipt_exists
 from .task_receipt import verify_task_result
 
 
+
+def is_local_analysis_eligible(event: dict) -> bool:
+    return (
+        event.get("policy") == "REVIEW"
+        and event.get("execute") is False
+    )
+
+
 def process_queue_event(event: dict) -> dict:
+    if not is_local_analysis_eligible(event):
+        return {
+            "status": "ineligible",
+            "written": False,
+        }
+
     task = task_from_queue_event(event)
 
     if receipt_exists(task.task_id):
