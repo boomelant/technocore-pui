@@ -33,3 +33,42 @@ def process_queue_event(event: dict) -> dict:
         "written": written,
         "result_hash": receipt.result_hash,
     }
+
+
+def process_next_queue_event(queue_path):
+    import json
+
+    if not queue_path.exists():
+        return {
+            "status": "empty",
+            "written": False,
+        }
+
+    with queue_path.open("r", encoding="utf-8") as handle:
+        lines = handle.readlines()
+
+    for line in reversed(lines):
+        line = line.strip()
+        if not line:
+            continue
+
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+
+        event_key = event.get("event_key")
+        if not isinstance(event_key, str) or not event_key:
+            continue
+
+        task_id = f"queue:{event_key}"
+
+        if receipt_exists(task_id):
+            continue
+
+        return process_queue_event(event)
+
+    return {
+        "status": "empty",
+        "written": False,
+    }
