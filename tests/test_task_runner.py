@@ -1,0 +1,39 @@
+from pui import task_ledger
+from pui.task_runner import process_queue_event
+
+
+def test_process_queue_event_writes_verified_receipt(tmp_path):
+    task_ledger.LEDGER_PATH = tmp_path / "task-receipts.jsonl"
+
+    event = {
+        "event_key": "lobby:999",
+        "room": "lobby",
+        "seq": 999,
+        "text": "PUI runner test",
+    }
+
+    result = process_queue_event(event)
+
+    assert result["status"] == "completed"
+    assert result["verified"] is True
+    assert result["written"] is True
+    assert result["task_id"] == "queue:lobby:999"
+    assert task_ledger.LEDGER_PATH.exists()
+
+
+def test_process_queue_event_is_idempotent(tmp_path):
+    task_ledger.LEDGER_PATH = tmp_path / "task-receipts.jsonl"
+
+    event = {
+        "event_key": "lobby:1000",
+        "room": "lobby",
+        "seq": 1000,
+        "text": "PUI duplicate test",
+    }
+
+    first = process_queue_event(event)
+    second = process_queue_event(event)
+
+    assert first["status"] == "completed"
+    assert second["status"] == "duplicate"
+    assert second["written"] is False
