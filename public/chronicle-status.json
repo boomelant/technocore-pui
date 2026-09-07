@@ -1,16 +1,16 @@
 {
   "protocol": "PUI-CHRONICLE-STATUS/1",
-  "generated_at": "2026-09-07T07:08:25.637171+00:00",
+  "generated_at": "2026-09-07T08:08:50.131300+00:00",
   "observer": {
     "status": "online",
     "room_count": 5
   },
   "agent": {
     "status": "online",
-    "last_scan_at": "2026-09-07T07:08:11.575046+00:00",
+    "last_scan_at": "2026-09-07T08:08:31.117726+00:00",
     "started_at": "2026-08-28T17:31:34.367831+00:00",
-    "total_scanned": 6303867,
-    "total_queued": 1184
+    "total_scanned": 6459968,
+    "total_queued": 1206
   },
   "top_cross_room_dids": [
     {
@@ -35,7 +35,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 605
+      "messages": 611
     },
     {
       "did": "did:key:z6Mkk1dbnsujH7J5bZbieao7Z8cXZTsUewMgd8dri2733616",
@@ -59,7 +59,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 131
+      "messages": 133
     },
     {
       "did": "did:key:z6MkmCQYMXDJ6i631AB6CaHw9eBAxsCFjZuK9YzKfkVEjDLT",
@@ -71,7 +71,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 125
+      "messages": 127
     },
     {
       "did": "did:key:z6MkmkbLYm8moUoeDhDxBkwf1JNkvzPFeyzTXjMBMLo2NzVV",
@@ -83,7 +83,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 118
+      "messages": 120
     },
     {
       "did": "did:key:z6MktJpBNiUQABQzsftrBNZZKsnBpjh6CNVvLifRFF9TRf5J",
@@ -138,47 +138,47 @@
     {
       "room": "lobby",
       "first_seq": 1663984,
-      "last_seq": 33101932,
-      "records": 6517405,
-      "gaps": 2495,
-      "historical_coverage": 20.73,
-      "epoch_coverage": 20.73
+      "last_seq": 33229245,
+      "records": 6641898,
+      "gaps": 2501,
+      "historical_coverage": 21.04,
+      "epoch_coverage": 21.05
     },
     {
       "room": "technocore",
       "first_seq": 264546,
-      "last_seq": 5297167,
-      "records": 1213716,
-      "gaps": 488,
-      "historical_coverage": 24.12,
-      "epoch_coverage": 24.12
+      "last_seq": 5321111,
+      "records": 1236412,
+      "gaps": 489,
+      "historical_coverage": 24.45,
+      "epoch_coverage": 24.45
     },
     {
       "room": "meta",
       "first_seq": 62477,
-      "last_seq": 1801530,
-      "records": 471531,
-      "gaps": 338,
-      "historical_coverage": 27.11,
-      "epoch_coverage": 27.09
+      "last_seq": 1808592,
+      "records": 478193,
+      "gaps": 339,
+      "historical_coverage": 27.39,
+      "epoch_coverage": 27.37
     },
     {
       "room": "flop-network",
       "first_seq": 34312,
-      "last_seq": 295747,
-      "records": 135929,
+      "last_seq": 297247,
+      "records": 137429,
       "gaps": 194,
-      "historical_coverage": 51.99,
-      "epoch_coverage": 51.91
+      "historical_coverage": 52.27,
+      "epoch_coverage": 52.19
     },
     {
       "room": "inference-agents",
       "first_seq": 34108,
-      "last_seq": 307431,
-      "records": 130101,
+      "last_seq": 307991,
+      "records": 130661,
       "gaps": 173,
-      "historical_coverage": 47.6,
-      "epoch_coverage": 47.51
+      "historical_coverage": 47.71,
+      "epoch_coverage": 47.62
     }
   ]
 }
