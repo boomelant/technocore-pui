@@ -114,3 +114,29 @@ def test_discover_and_evaluate():
     assert result["status"] == "candidate"
     assert result["opportunity"].offer_id == "0x999"
     assert result["decision"]["eligible"] is True
+
+def test_opportunity_snapshot():
+    from pui.opportunity import opportunity_snapshot
+
+    def fake_read_room(room, limit=50):
+        return {
+            "messages": [
+                {
+                    "seq": 30,
+                    "from": "did:key:z6MkAgent",
+                    "text": (
+                        'tclk1 '
+                        '{"amount":"400","asset":"FLOP","id":"0x777",'
+                        '"job":{"context":"/kv/job/777","proto":"blockrewards"},'
+                        '"rails":["paper"],"type":"offer"}'
+                    ),
+                }
+            ]
+        }
+
+    snapshot = opportunity_snapshot(fake_read_room)
+
+    assert snapshot["status"] == "candidate"
+    assert snapshot["opportunity"]["seq"] == 30
+    assert snapshot["opportunity"]["offer_id"] == "0x777"
+    assert snapshot["decision"]["eligible"] is True

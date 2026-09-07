@@ -4,9 +4,19 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from pui.agent_scan import ROOMS, scan_room
+from pui.opportunity import opportunity_snapshot
+from pui.opportunity_state import write_opportunity_state
+from pui.technocore import read_room
 
 
 HEALTH_PATH = Path("data/agent-health.json")
+OPPORTUNITY_INTERVAL = 60
+
+
+def scan_opportunity_once() -> dict:
+    result = opportunity_snapshot(read_room)
+    write_opportunity_state(result)
+    return result
 
 
 def write_health(
@@ -49,8 +59,29 @@ def main(interval: int = 15):
     print("rooms:", ", ".join(ROOMS))
     print("scan interval:", interval, "seconds")
 
+    last_opportunity_scan = 0.0
+
     while True:
         room_stats = {}
+
+        now_monotonic = time.monotonic()
+
+        if now_monotonic - last_opportunity_scan >= OPPORTUNITY_INTERVAL:
+            try:
+                opportunity = scan_opportunity_once()
+                print(
+                    "opportunity:",
+                    opportunity.get("status"),
+                    opportunity.get("decision"),
+                )
+            except Exception as exc:
+                print(
+                    "opportunity ERROR:",
+                    type(exc).__name__,
+                    str(exc),
+                )
+
+            last_opportunity_scan = now_monotonic
 
         for room in ROOMS:
             try:

@@ -113,3 +113,33 @@ def discover_and_evaluate(read_room_func, limit: int = 50) -> dict:
         "opportunity": opportunity,
         "decision": decision,
     }
+
+
+def opportunity_snapshot(read_room_func) -> dict:
+    result = discover_and_evaluate(read_room_func)
+
+    opportunity = result.get("opportunity")
+    decision = result.get("decision")
+
+    if opportunity is None:
+        return {
+            "status": result.get("status", "none"),
+            "opportunity": None,
+            "decision": decision,
+        }
+
+    return {
+        "status": result.get("status", "candidate"),
+        "opportunity": {
+            "seq": opportunity.seq,
+            "sender": opportunity.sender,
+            "offer_id": opportunity.offer_id,
+            "amount": opportunity.amount,
+            "asset": opportunity.asset,
+            "rails": list(opportunity.rails),
+            "job_proto": opportunity.job_proto,
+            "job_context": opportunity.job_context,
+            "expires_ms": opportunity.expires_ms,
+        },
+        "decision": decision,
+    }
