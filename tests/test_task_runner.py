@@ -84,3 +84,27 @@ def test_process_queue_event_rejects_ineligible_event(tmp_path):
     assert result["status"] == "ineligible"
     assert result["written"] is False
     assert not task_ledger.LEDGER_PATH.exists()
+
+
+def test_run_once_uses_default_queue_path(tmp_path, monkeypatch):
+    queue_path = tmp_path / "agent-queue.jsonl"
+    task_ledger.LEDGER_PATH = tmp_path / "task-receipts.jsonl"
+
+    queue_path.write_text(
+        '{"event_key":"lobby:3000","room":"lobby","seq":3000,"text":"bounded runner","policy":"REVIEW","execute":false}\n',
+        encoding="utf-8",
+    )
+
+    import pui.task_runner as task_runner
+
+    monkeypatch.setattr(
+        task_runner,
+        "process_next_queue_event",
+        lambda path: process_next_queue_event(queue_path),
+    )
+
+    result = task_runner.run_once()
+
+    assert result["task_id"] == "queue:lobby:3000"
+    assert result["status"] == "completed"
+    assert result["verified"] is True

@@ -86,3 +86,10 @@ def process_next_queue_event(queue_path):
         "status": "empty",
         "written": False,
     }
+
+
+def run_once():
+    from pathlib import Path
+
+    queue_path = Path("data/agent-queue.jsonl")
+    return process_next_queue_event(queue_path)
