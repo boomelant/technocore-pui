@@ -13,6 +13,7 @@ LOCAL_OUTPUT = Path("data/chronicle-status.json")
 PUBLIC_OUTPUT = Path("public/chronicle-status.json")
 DOCS_OUTPUT = Path("docs/chronicle-status.json")
 AGENT_HEALTH = Path("data/agent-health.json")
+TASK_RUNNER_STATE = Path("data/task-runner-state.json")
 
 ROOMS = [
     "lobby",
@@ -71,6 +72,23 @@ def build_status():
         except Exception:
             agent["status"] = "error"
 
+    task_runner = {
+        "status": "unknown",
+        "updated_at": None,
+        "result": None,
+    }
+
+    if TASK_RUNNER_STATE.exists():
+        try:
+            raw = json.loads(TASK_RUNNER_STATE.read_text(encoding="utf-8"))
+            task_runner = {
+                "status": "online",
+                "updated_at": raw.get("updated_at"),
+                "result": raw.get("result"),
+            }
+        except Exception:
+            task_runner["status"] = "error"
+
     return {
         "protocol": "PUI-CHRONICLE-STATUS/1",
         "generated_at": generated_at.isoformat(),
@@ -79,6 +97,7 @@ def build_status():
             "room_count": len(ROOMS),
         },
         "agent": agent,
+        "task_runner": task_runner,
         "top_cross_room_dids": top_cross_room_dids(limit=10),
         "rooms": [room_status(room) for room in ROOMS],
     }
