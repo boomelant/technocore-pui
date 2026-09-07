@@ -74,6 +74,7 @@
   <div id="generated" class="muted" style="margin-top:8px"></div>
   <div id="observer" style="margin-top:12px;font-weight:700"></div>
   <div id="agent" style="margin-top:8px;font-weight:700"></div>
+  <div id="task-runner" style="margin-top:8px;font-weight:700"></div>
 
   <div id="cross-room" style="margin-top:16px"></div>
 
@@ -142,6 +143,19 @@ async function loadStatus() {
     document.getElementById("agent").textContent =
       "Agent: " + agentStatus.toUpperCase();
   }
+
+  const taskRunner = data.task_runner || {};
+  const taskRunnerResult = taskRunner.result || {};
+
+  document.getElementById("task-runner").textContent =
+    "Task runner: " +
+    (taskRunner.status || "unknown").toUpperCase() +
+    " | last task: " +
+    (taskRunnerResult.task_id || "none") +
+    " | status: " +
+    (taskRunnerResult.status || "none").toUpperCase() +
+    " | verified: " +
+    (taskRunnerResult.verified === true ? "yes" : "no");
 
   const crossRoom = data.top_cross_room_dids || [];
   const crossRoomEl = document.getElementById("cross-room");
