@@ -90,6 +90,9 @@ def process_next_queue_event(queue_path):
 
 def run_once():
     from pathlib import Path
+    from .task_runner_state import write_runner_state
 
     queue_path = Path("data/agent-queue.jsonl")
-    return process_next_queue_event(queue_path)
+    result = process_next_queue_event(queue_path)
+    write_runner_state(result)
+    return result
