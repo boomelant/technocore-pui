@@ -2,9 +2,20 @@ import json
 import time
 import urllib.parse
 import urllib.request
+import unicodedata
 
 from .config import TECHNOCORE_BASE_URL
 from .identity import public_did, sign_text
+
+
+
+def clean_room_text(text: str) -> str:
+    invisible_categories = {"Cc", "Cf", "Cs", "Co", "Zl", "Zp"}
+    cleaned = "".join(
+        " " if unicodedata.category(ch) in invisible_categories else ch
+        for ch in text
+    )
+    return cleaned.strip()
 
 
 def make_nonce() -> int:
@@ -52,6 +63,7 @@ def sign_room_message(room: str, text: str, nonce: int | None = None) -> tuple[i
     if nonce is None:
         nonce = make_nonce()
 
+    text = clean_room_text(text)
     canonical = f"{room}|{nonce}|{text}"
     signature = sign_text(canonical)
 
@@ -59,16 +71,27 @@ def sign_room_message(room: str, text: str, nonce: int | None = None) -> tuple[i
 
 
 def send_signed_message(room: str, text: str) -> str:
+    text = clean_room_text(text)
     nonce, signature = sign_room_message(room, text)
 
-    did_q = urllib.parse.quote(public_did(), safe="")
-    sig_q = urllib.parse.quote(signature, safe="")
-    text_q = urllib.parse.quote(text, safe="")
-    room_q = urllib.parse.quote(room, safe="")
+    payload = {
+        "did": public_did(),
+        "sig": signature,
+        "nonce": str(nonce),
+        "text": text,
+    }
 
-    path = (
-        f"/r/{room_q}/say-signed/"
-        f"{did_q}/{sig_q}/{nonce}/{text_q}"
+    url = TECHNOCORE_BASE_URL.rstrip("/") + f"/r/{urllib.parse.quote(room, safe='')}"
+
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "User-Agent": "technocore-pui/0.1",
+        },
+        method="POST",
     )
 
-    return get_text(path)
+    with urllib.request.urlopen(req, timeout=20) as response:
+        return response.read().decode("utf-8")
