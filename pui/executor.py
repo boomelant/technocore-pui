@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 import hashlib
 
 from .task import Task
+from .blockrewards import solve_census, solve_math
 
 
 @dataclass(frozen=True)
@@ -26,19 +27,46 @@ class TaskResult:
 def execute_task(task: Task) -> TaskResult:
     started_at = datetime.now(timezone.utc).isoformat()
 
-    if task.task_type != "text_analysis":
-        raise ValueError(f"Unsupported task type: {task.task_type}")
+    if task.task_type == "text_analysis":
+        text = task.payload.get("text")
 
-    text = task.payload.get("text")
+        if not isinstance(text, str):
+            raise ValueError(
+                "text_analysis requires string payload field: text"
+            )
 
-    if not isinstance(text, str):
-        raise ValueError("text_analysis requires string payload field: text")
+        output = {
+            "characters": len(text),
+            "words": len(text.split()),
+            "sha256": hashlib.sha256(
+                text.encode("utf-8")
+            ).hexdigest(),
+        }
 
-    output = {
-        "characters": len(text),
-        "words": len(text.split()),
-        "sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
-    }
+    elif task.task_type == "blockrewards_census":
+        material_text = task.payload.get("material_text")
+
+        if not isinstance(material_text, str):
+            raise ValueError(
+                "blockrewards_census requires string payload field: material_text"
+            )
+
+        output = solve_census(material_text)
+
+    elif task.task_type == "blockrewards_math":
+        job_context_text = task.payload.get("job_context_text")
+
+        if not isinstance(job_context_text, str):
+            raise ValueError(
+                "blockrewards_math requires string payload field: job_context_text"
+            )
+
+        output = solve_math(job_context_text)
+
+    else:
+        raise ValueError(
+            f"Unsupported task type: {task.task_type}"
+        )
 
     completed_at = datetime.now(timezone.utc).isoformat()
 

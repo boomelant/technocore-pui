@@ -140,3 +140,136 @@ def test_opportunity_snapshot():
     assert snapshot["opportunity"]["seq"] == 30
     assert snapshot["opportunity"]["offer_id"] == "0x777"
     assert snapshot["decision"]["eligible"] is True
+
+def test_discover_latest_eligible_opportunity_skips_unsupported():
+    from pui.opportunity import discover_latest_eligible_opportunity
+
+    def fake_read_room(room, limit=200):
+        return {
+            "messages": [
+                {
+                    "seq": 10,
+                    "from": "did:key:z6MkOld",
+                    "text": (
+                        'tclk1 '
+                        '{"amount":"200","asset":"FLOP","id":"0xold",'
+                        '"job":{"context":"/kv/job/old","proto":"blockrewards"},'
+                        '"rails":["paper"],"type":"offer"}'
+                    ),
+                },
+                {
+                    "seq": 11,
+                    "from": "did:key:z6MkNew",
+                    "text": (
+                        'tclk1 '
+                        '{"amount":"200","asset":"PAPER","id":"0xnew",'
+                        '"job":{"context":"/kv/job/new","proto":"a2a"},'
+                        '"rails":["paper"],"type":"offer"}'
+                    ),
+                },
+            ]
+        }
+
+    opportunity = discover_latest_eligible_opportunity(fake_read_room)
+
+    assert opportunity is not None
+    assert opportunity.seq == 10
+    assert opportunity.offer_id == "0xold"
+    assert opportunity.job_proto == "blockrewards"
+
+
+def test_evaluate_job_context():
+    from pui.opportunity import evaluate_job_context
+
+    census = evaluate_job_context(
+        "census | source /kv/tclk-mat-67/example"
+    )
+    assert census["eligible"] is True
+    assert census["job_type"] == "census"
+
+    fold = evaluate_job_context(
+        "protocol | Fold this tclk/1 transcript with foldTranscript"
+    )
+    assert fold["eligible"] is False
+    assert fold["job_type"] == "protocol_fold"
+    assert fold["reason"] == "recognized_but_not_implemented"
+
+
+def test_discover_latest_executable_opportunity_skips_unimplemented():
+    from pui.opportunity import discover_latest_executable_opportunity
+
+    def fake_read_room(room, limit=200):
+        assert room == "tclk-offers"
+
+        return {
+            "messages": [
+                {
+                    "seq": 100,
+                    "from": "did:key:z6MkCensus",
+                    "text": (
+                        'tclk1 '
+                        '{"amount":"200","asset":"FLOP","id":"0xcensus",'
+                        '"job":{"context":"/kv/job/census","proto":"blockrewards"},'
+                        '"rails":["paper"],"type":"offer"}'
+                    ),
+                },
+                {
+                    "seq": 101,
+                    "from": "did:key:z6MkFold",
+                    "text": (
+                        'tclk1 '
+                        '{"amount":"400","asset":"FLOP","id":"0xfold",'
+                        '"job":{"context":"/kv/job/fold","proto":"blockrewards"},'
+                        '"rails":["paper"],"type":"offer"}'
+                    ),
+                },
+            ]
+        }
+
+    def fake_get_text(path):
+        if path == "/kv/job/census":
+            return "census | source /kv/tclk-mat-67/example"
+
+        if path == "/kv/job/fold":
+            return (
+                "protocol | Fold this tclk/1 transcript "
+                "with foldTranscript"
+            )
+
+        raise AssertionError(f"unexpected path: {path}")
+
+    result = discover_latest_executable_opportunity(
+        fake_read_room,
+        fake_get_text,
+    )
+
+    assert result["status"] == "executable"
+    assert result["opportunity"].seq == 100
+    assert result["opportunity"].offer_id == "0xcensus"
+    assert result["decision"]["eligible"] is True
+    assert result["decision"]["job_type"] == "census"
+
+
+def test_evaluate_math_job_context():
+    from pui.opportunity import evaluate_job_context
+
+    result = evaluate_job_context(
+        "math | [difficulty 1/3] "
+        "Compute gcd(10, 20) and lcm(10, 20)."
+    )
+
+    assert result["eligible"] is True
+    assert result["job_type"] == "math"
+    assert result["reason"] == "supported_blockrewards_math"
+
+
+def test_evaluate_unsupported_math_job_context():
+    from pui.opportunity import evaluate_job_context
+
+    result = evaluate_job_context(
+        "math | Compute the square root of 144."
+    )
+
+    assert result["eligible"] is False
+    assert result["job_type"] == "math"
+    assert result["reason"] == "unsupported_math_task"

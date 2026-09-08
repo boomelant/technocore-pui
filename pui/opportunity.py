@@ -143,3 +143,115 @@ def opportunity_snapshot(read_room_func) -> dict:
         },
         "decision": decision,
     }
+
+
+def discover_latest_eligible_opportunity(
+    read_room_func,
+    limit: int = 200,
+) -> Opportunity | None:
+    data = read_room_func("tclk-offers", limit=limit)
+
+    messages = data.get("messages", [])
+    if not isinstance(messages, list):
+        return None
+
+    for message in reversed(messages):
+        opportunity = parse_tclk_offer(message)
+        if opportunity is None:
+            continue
+
+        decision = evaluate_opportunity(opportunity)
+
+        if decision.get("eligible") is True:
+            return opportunity
+
+    return None
+
+
+def evaluate_job_context(job_context_text: str) -> dict:
+    from .blockrewards import classify_job_context
+
+    job_type = classify_job_context(job_context_text)
+
+    if job_type == "census":
+        return {
+            "eligible": True,
+            "job_type": "census",
+            "reason": "supported_blockrewards_census",
+        }
+
+    if job_type == "math":
+        from .blockrewards import supports_math_job
+
+        if supports_math_job(job_context_text):
+            return {
+                "eligible": True,
+                "job_type": "math",
+                "reason": "supported_blockrewards_math",
+            }
+
+        return {
+            "eligible": False,
+            "job_type": "math",
+            "reason": "unsupported_math_task",
+        }
+
+    if job_type == "protocol_fold":
+        return {
+            "eligible": False,
+            "job_type": "protocol_fold",
+            "reason": "recognized_but_not_implemented",
+        }
+
+    return {
+        "eligible": False,
+        "job_type": job_type,
+        "reason": "unsupported_blockrewards_job",
+    }
+
+
+def discover_latest_executable_opportunity(
+    read_room_func,
+    get_text_func,
+    limit: int = 200,
+) -> dict:
+    data = read_room_func("tclk-offers", limit=limit)
+
+    messages = data.get("messages", [])
+    if not isinstance(messages, list):
+        return {
+            "status": "none",
+            "opportunity": None,
+            "decision": None,
+            "job_context_text": None,
+        }
+
+    for message in reversed(messages):
+        opportunity = parse_tclk_offer(message)
+        if opportunity is None:
+            continue
+
+        basic = evaluate_opportunity(opportunity)
+        if basic.get("eligible") is not True:
+            continue
+
+        if not opportunity.job_context:
+            continue
+
+        context_text = get_text_func(opportunity.job_context)
+        decision = evaluate_job_context(context_text)
+
+        if decision.get("eligible") is True:
+            return {
+                "status": "executable",
+                "opportunity": opportunity,
+                "decision": decision,
+                "job_context_text": context_text,
+            }
+
+    return {
+        "status": "none",
+        "opportunity": None,
+        "decision": None,
+        "job_context_text": None,
+    }
