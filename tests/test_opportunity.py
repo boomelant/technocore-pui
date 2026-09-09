@@ -273,3 +273,51 @@ def test_evaluate_unsupported_math_job_context():
     assert result["eligible"] is False
     assert result["job_type"] == "math"
     assert result["reason"] == "unsupported_math_task"
+
+
+def test_evaluate_opportunity_rejects_expired_offer():
+    from pui.opportunity import Opportunity, evaluate_opportunity
+
+    opportunity = Opportunity(
+        seq=1,
+        sender="did:key:z6MkExample",
+        offer_id="0xexpired",
+        amount="200",
+        asset="FLOP",
+        rails=("paper",),
+        job_proto="blockrewards",
+        job_context="/kv/job/example",
+        expires_ms=1_000,
+    )
+
+    result = evaluate_opportunity(
+        opportunity,
+        now_ms=2_000,
+    )
+
+    assert result["eligible"] is False
+    assert result["reason"] == "expired_offer"
+
+
+def test_evaluate_opportunity_accepts_unexpired_offer():
+    from pui.opportunity import Opportunity, evaluate_opportunity
+
+    opportunity = Opportunity(
+        seq=1,
+        sender="did:key:z6MkExample",
+        offer_id="0xfresh",
+        amount="200",
+        asset="FLOP",
+        rails=("paper",),
+        job_proto="blockrewards",
+        job_context="/kv/job/example",
+        expires_ms=3_000,
+    )
+
+    result = evaluate_opportunity(
+        opportunity,
+        now_ms=2_000,
+    )
+
+    assert result["eligible"] is True
+    assert result["reason"] == "supported_blockrewards_job"

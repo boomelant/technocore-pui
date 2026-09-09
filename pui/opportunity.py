@@ -1,4 +1,5 @@
 import json
+import time
 from dataclasses import dataclass
 
 
@@ -68,7 +69,22 @@ def discover_latest_opportunity(read_room_func, limit: int = 50) -> Opportunity 
     return None
 
 
-def evaluate_opportunity(opportunity: Opportunity) -> dict:
+def evaluate_opportunity(
+    opportunity: Opportunity,
+    now_ms: int | None = None,
+) -> dict:
+    if now_ms is None:
+        now_ms = time.time_ns() // 1_000_000
+
+    if (
+        isinstance(opportunity.expires_ms, int)
+        and opportunity.expires_ms <= now_ms
+    ):
+        return {
+            "eligible": False,
+            "reason": "expired_offer",
+        }
+
     if opportunity.job_proto != "blockrewards":
         return {
             "eligible": False,
