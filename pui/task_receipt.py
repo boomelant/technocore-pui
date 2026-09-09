@@ -4,6 +4,7 @@ import hashlib
 
 from .task import Task
 from .executor import TaskResult
+from .blockrewards import solve_census, solve_math
 
 
 @dataclass(frozen=True)
@@ -27,17 +28,34 @@ def verify_task_result(task: Task, result: TaskResult) -> TaskReceipt:
         result.task_id == task.task_id
         and result.task_type == task.task_type
         and result.status == "completed"
-        and task.task_type == "text_analysis"
     ):
-        text = task.payload.get("text")
+        expected_output = None
 
-        if isinstance(text, str):
-            expected_output = {
-                "characters": len(text),
-                "words": len(text.split()),
-                "sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
-            }
+        if task.task_type == "text_analysis":
+            text = task.payload.get("text")
 
+            if isinstance(text, str):
+                expected_output = {
+                    "characters": len(text),
+                    "words": len(text.split()),
+                    "sha256": hashlib.sha256(
+                        text.encode("utf-8")
+                    ).hexdigest(),
+                }
+
+        elif task.task_type == "blockrewards_census":
+            material_text = task.payload.get("material_text")
+
+            if isinstance(material_text, str):
+                expected_output = solve_census(material_text)
+
+        elif task.task_type == "blockrewards_math":
+            job_context_text = task.payload.get("job_context_text")
+
+            if isinstance(job_context_text, str):
+                expected_output = solve_math(job_context_text)
+
+        if expected_output is not None:
             verified = result.output == expected_output
 
     return TaskReceipt(

@@ -2,7 +2,7 @@ from .executor import execute_task
 from .task_adapter import task_from_queue_event
 from .task_ledger import append_task_receipt, receipt_exists
 from .task_receipt import verify_task_result
-
+from .opportunity_task import build_task_from_opportunity
 
 
 def is_local_analysis_eligible(event: dict) -> bool:
@@ -12,15 +12,7 @@ def is_local_analysis_eligible(event: dict) -> bool:
     )
 
 
-def process_queue_event(event: dict) -> dict:
-    if not is_local_analysis_eligible(event):
-        return {
-            "status": "ineligible",
-            "written": False,
-        }
-
-    task = task_from_queue_event(event)
-
+def process_task(task) -> dict:
     if receipt_exists(task.task_id):
         return {
             "task_id": task.task_id,
@@ -29,6 +21,7 @@ def process_queue_event(event: dict) -> dict:
         }
 
     result = execute_task(task)
+
     receipt = verify_task_result(task, result)
 
     if not receipt.verified:
@@ -49,6 +42,30 @@ def process_queue_event(event: dict) -> dict:
     }
 
 
+def process_opportunity(
+    opportunity,
+    get_text_func,
+) -> dict:
+    task = build_task_from_opportunity(
+        opportunity,
+        get_text_func,
+    )
+
+    return process_task(task)
+
+
+def process_queue_event(event: dict) -> dict:
+    if not is_local_analysis_eligible(event):
+        return {
+            "status": "ineligible",
+            "written": False,
+        }
+
+    task = task_from_queue_event(event)
+
+    return process_task(task)
+
+
 def process_next_queue_event(queue_path):
     import json
 
@@ -63,6 +80,7 @@ def process_next_queue_event(queue_path):
 
     for line in reversed(lines):
         line = line.strip()
+
         if not line:
             continue
 
@@ -72,6 +90,7 @@ def process_next_queue_event(queue_path):
             continue
 
         event_key = event.get("event_key")
+
         if not isinstance(event_key, str) or not event_key:
             continue
 
@@ -93,6 +112,9 @@ def run_once():
     from .task_runner_state import write_runner_state
 
     queue_path = Path("data/agent-queue.jsonl")
+
     result = process_next_queue_event(queue_path)
+
     write_runner_state(result)
+
     return result

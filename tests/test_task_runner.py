@@ -108,3 +108,43 @@ def test_run_once_uses_default_queue_path(tmp_path, monkeypatch):
     assert result["task_id"] == "queue:lobby:3000"
     assert result["status"] == "completed"
     assert result["verified"] is True
+
+
+def test_process_opportunity_math_end_to_end(tmp_path):
+    from pui.opportunity import Opportunity
+    from pui.task_runner import process_opportunity
+
+    task_ledger.LEDGER_PATH = tmp_path / "task-receipts.jsonl"
+
+    opportunity = Opportunity(
+        seq=500,
+        sender="did:key:z6MkWorker",
+        offer_id="0xmath-e2e",
+        amount="200",
+        asset="FLOP",
+        rails=("paper",),
+        job_proto="blockrewards",
+        job_context="/kv/tclk-job/math-e2e",
+        expires_ms=None,
+    )
+
+    def fake_get_text(path):
+        if path == "/kv/tclk-job/math-e2e":
+            return (
+                "math | [difficulty 1/3] "
+                "Compute gcd(10, 20) and lcm(10, 20)."
+            )
+
+        raise AssertionError(f"unexpected path: {path}")
+
+    result = process_opportunity(
+        opportunity,
+        fake_get_text,
+    )
+
+    assert result["task_id"] == "tclk:0xmath-e2e"
+    assert result["status"] == "completed"
+    assert result["verified"] is True
+    assert result["written"] is True
+    assert result["result_hash"].startswith("sha256:")
+    assert task_ledger.LEDGER_PATH.exists()

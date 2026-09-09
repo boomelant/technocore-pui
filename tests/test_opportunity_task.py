@@ -123,3 +123,38 @@ def test_task_from_blockrewards_math_opportunity():
     assert task.payload["source_sender"] == "did:key:z6MkExample"
     assert task.payload["job_context_path"] == "/kv/tclk-job-1d/math-example"
     assert task.payload["job_context_text"] == context
+
+
+def test_build_task_from_opportunity_builds_math_task():
+    from pui.opportunity_task import build_task_from_opportunity
+
+    opportunity = Opportunity(
+        seq=456,
+        sender="did:key:z6MkMath",
+        offer_id="0xmath2",
+        amount="200",
+        asset="FLOP",
+        rails=("paper",),
+        job_proto="blockrewards",
+        job_context="/kv/tclk-job/math2",
+        expires_ms=None,
+    )
+
+    def fake_get_text(path):
+        if path == "/kv/tclk-job/math2":
+            return (
+                "math | [difficulty 1/3] "
+                "Compute gcd(10, 20) and lcm(10, 20)."
+            )
+
+        raise AssertionError(f"unexpected path: {path}")
+
+    task = build_task_from_opportunity(
+        opportunity,
+        fake_get_text,
+    )
+
+    assert task.task_id == "tclk:0xmath2"
+    assert task.task_type == "blockrewards_math"
+    assert task.payload["job_context_path"] == "/kv/tclk-job/math2"
+    assert "gcd(10, 20)" in task.payload["job_context_text"]
