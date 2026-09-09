@@ -4,9 +4,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from pui.agent_scan import ROOMS, scan_room
-from pui.opportunity import opportunity_snapshot
+from pui.opportunity import (
+    opportunity_snapshot,
+    discover_latest_executable_opportunity,
+)
 from pui.opportunity_state import write_opportunity_state
-from pui.technocore import read_room
+from pui.technocore import read_room, get_text
+from pui.task_runner import process_opportunity
 
 
 HEALTH_PATH = Path("data/agent-health.json")
@@ -17,6 +21,48 @@ def scan_opportunity_once() -> dict:
     result = opportunity_snapshot(read_room)
     write_opportunity_state(result)
     return result
+
+
+def execute_opportunity_once() -> dict:
+    candidate = discover_latest_executable_opportunity(
+        read_room,
+        get_text,
+    )
+
+    if candidate.get("status") != "executable":
+        return {
+            "status": "none",
+            "executed": False,
+        }
+
+    opportunity = candidate.get("opportunity")
+
+    if opportunity is None:
+        return {
+            "status": "none",
+            "executed": False,
+        }
+
+    result = process_opportunity(
+        opportunity,
+        get_text,
+    )
+
+    return {
+        **result,
+        "executed": result.get("status") == "completed",
+        "offer_id": opportunity.offer_id,
+    }
+
+
+def opportunity_cycle_once() -> dict:
+    snapshot = scan_opportunity_once()
+    execution = execute_opportunity_once()
+
+    return {
+        "snapshot": snapshot,
+        "execution": execution,
+    }
 
 
 def write_health(
@@ -68,12 +114,23 @@ def main(interval: int = 15):
 
         if now_monotonic - last_opportunity_scan >= OPPORTUNITY_INTERVAL:
             try:
-                opportunity = scan_opportunity_once()
+                cycle = opportunity_cycle_once()
+
+                snapshot = cycle.get("snapshot", {})
+                execution = cycle.get("execution", {})
+
                 print(
                     "opportunity:",
-                    opportunity.get("status"),
-                    opportunity.get("decision"),
+                    snapshot.get("status"),
+                    snapshot.get("decision"),
                 )
+
+                print(
+                    "execution:",
+                    execution.get("status"),
+                    execution.get("offer_id"),
+                )
+
             except Exception as exc:
                 print(
                     "opportunity ERROR:",
