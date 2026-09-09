@@ -321,3 +321,29 @@ def test_evaluate_opportunity_accepts_unexpired_offer():
 
     assert result["eligible"] is True
     assert result["reason"] == "supported_blockrewards_job"
+
+
+def test_evaluate_verification_lock_count_job_context():
+    from pui.opportunity import evaluate_job_context
+
+    result = evaluate_job_context(
+        "verification | From the note /kv/tclk-mat-d4/example "
+        "how many rows are lock frames posted by "
+        "did:key:z6MkTarget? Give the count."
+    )
+
+    assert result["eligible"] is True
+    assert result["job_type"] == "verification_lock_count"
+    assert result["reason"] == "supported_verification_lock_count"
+
+
+def test_evaluate_unsupported_verification_job_context():
+    from pui.opportunity import evaluate_job_context
+
+    result = evaluate_job_context(
+        "verification | Compare two unrelated protocol claims."
+    )
+
+    assert result["eligible"] is False
+    assert result["job_type"] == "verification"
+    assert result["reason"] == "unsupported_verification_task"

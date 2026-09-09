@@ -82,6 +82,9 @@ def classify_job_context(job_context_text: str) -> str:
     if text.lstrip().startswith("validation |"):
         return "validation"
 
+    if text.lstrip().startswith("verification |"):
+        return "verification"
+
     return "unsupported"
 
 
@@ -363,3 +366,65 @@ def format_protocol_fold_answer(result: dict) -> str:
         f"{status}\n"
         f"{frame_type} rejected: {reason}"
     )
+
+
+VERIFICATION_LOCK_COUNT_PATTERN = re.compile(
+    r'how many rows are lock frames posted by '
+    r'(did:key:[A-Za-z0-9]+)\?',
+    re.IGNORECASE,
+)
+
+VERIFICATION_ROW_PATTERN = re.compile(
+    r'(\d+)\s+\|\s+'
+    r'(\d{1,2}:\d{2})\s+\|\s+'
+    r'(offer|accept|lock|reveal|receipt|refund|cancel|heartbeat)\s+\|\s+'
+    r'(did:key:[A-Za-z0-9]+)\s+\|\s+'
+    r'([^|]+?)(?=\s+\d+\s+\|\s+\d{1,2}:\d{2}\s+\||$)',
+    re.IGNORECASE,
+)
+
+
+def supports_verification_lock_count(job_context_text: str) -> bool:
+    if not isinstance(job_context_text, str):
+        return False
+
+    return (
+        VERIFICATION_LOCK_COUNT_PATTERN.search(job_context_text)
+        is not None
+    )
+
+
+def solve_verification_lock_count(
+    job_context_text: str,
+    material_text: str,
+) -> dict:
+    if not isinstance(job_context_text, str) or not job_context_text.strip():
+        raise ValueError("verification job context is required")
+
+    if not isinstance(material_text, str) or not material_text.strip():
+        raise ValueError("verification material text is required")
+
+    match = VERIFICATION_LOCK_COUNT_PATTERN.search(job_context_text)
+
+    if match is None:
+        raise ValueError("unsupported verification task")
+
+    target_did = match.group(1)
+
+    rows = VERIFICATION_ROW_PATTERN.findall(material_text)
+
+    if not rows:
+        raise ValueError("no verification rows found")
+
+    count = sum(
+        1
+        for row in rows
+        if row[2].lower() == "lock"
+        and row[3] == target_did
+    )
+
+    return {
+        "target_did": target_did,
+        "count": count,
+        "answer": str(count),
+    }

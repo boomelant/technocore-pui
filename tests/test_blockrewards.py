@@ -334,3 +334,31 @@ def test_format_protocol_fold_answer():
             "lock rejected: lock must be posted in mb-p-tclk-example"
         )
     )
+
+
+def test_solve_verification_lock_count():
+    from pui.blockrewards import solve_verification_lock_count
+
+    context = (
+        "verification | From the note /kv/tclk-mat-d4/example "
+        "how many rows are lock frames posted by "
+        "did:key:z6MkTarget? Give the count."
+    )
+
+    material = (
+        "seq | time | type | from | ref "
+        "1 | 10:00 | offer | did:key:z6MkTarget | 0xaaa "
+        "2 | 10:01 | lock | did:key:z6MkTarget | tclk-aa/one "
+        "3 | 10:02 | receipt | did:key:z6MkTarget | tclk-aa/one "
+        "4 | 10:03 | lock | did:key:z6MkOther | tclk-bb/two "
+        "5 | 10:04 | lock | did:key:z6MkTarget | tclk-cc/three"
+    )
+
+    result = solve_verification_lock_count(
+        context,
+        material,
+    )
+
+    assert result["target_did"] == "did:key:z6MkTarget"
+    assert result["count"] == 2
+    assert result["answer"] == "2"

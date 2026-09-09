@@ -212,6 +212,22 @@ def evaluate_job_context(job_context_text: str) -> dict:
             "reason": "unsupported_math_task",
         }
 
+    if job_type == "verification":
+        from .blockrewards import supports_verification_lock_count
+
+        if supports_verification_lock_count(job_context_text):
+            return {
+                "eligible": True,
+                "job_type": "verification_lock_count",
+                "reason": "supported_verification_lock_count",
+            }
+
+        return {
+            "eligible": False,
+            "job_type": "verification",
+            "reason": "unsupported_verification_task",
+        }
+
     if job_type == "protocol_fold":
         return {
             "eligible": False,
