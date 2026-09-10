@@ -55,6 +55,39 @@ def task_from_blockrewards_math_opportunity(
     )
 
 
+def task_from_blockrewards_verification_lock_count_opportunity(
+    opportunity: Opportunity,
+    job_context_text: str,
+    material_path: str,
+    material_text: str,
+) -> Task:
+    if opportunity.job_proto != "blockrewards":
+        raise ValueError("unsupported job proto")
+
+    if not isinstance(job_context_text, str) or not job_context_text.strip():
+        raise ValueError("job context text is required")
+
+    if not isinstance(material_path, str) or not material_path:
+        raise ValueError("material path is required")
+
+    if not isinstance(material_text, str) or not material_text.strip():
+        raise ValueError("material text is required")
+
+    return Task(
+        task_id=f"tclk:{opportunity.offer_id}",
+        task_type="blockrewards_verification_lock_count",
+        payload={
+            "offer_id": opportunity.offer_id,
+            "source_seq": opportunity.seq,
+            "source_sender": opportunity.sender,
+            "job_context_path": opportunity.job_context,
+            "job_context_text": job_context_text,
+            "material_path": material_path,
+            "material_text": material_text,
+        },
+    )
+
+
 def build_task_from_opportunity(
     opportunity: Opportunity,
     get_text_func,
@@ -88,6 +121,17 @@ def build_task_from_opportunity(
         return task_from_blockrewards_math_opportunity(
             opportunity,
             context_text,
+        )
+
+    if job_type == "verification":
+        material_path = extract_material_path(context_text)
+        material_text = get_text_func(material_path)
+
+        return task_from_blockrewards_verification_lock_count_opportunity(
+            opportunity,
+            context_text,
+            material_path,
+            material_text,
         )
 
     raise ValueError(

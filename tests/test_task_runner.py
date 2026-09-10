@@ -148,3 +148,57 @@ def test_process_opportunity_math_end_to_end(tmp_path):
     assert result["written"] is True
     assert result["result_hash"].startswith("sha256:")
     assert task_ledger.LEDGER_PATH.exists()
+
+
+def test_process_opportunity_verification_lock_count_end_to_end(tmp_path):
+    from pui.opportunity import Opportunity
+    from pui.task_runner import process_opportunity
+
+    task_ledger.LEDGER_PATH = tmp_path / "task-receipts.jsonl"
+
+    opportunity = Opportunity(
+        seq=800,
+        sender="did:key:z6MkVerifier",
+        offer_id="0xverify-e2e",
+        amount="200",
+        asset="FLOP",
+        rails=("paper",),
+        job_proto="blockrewards",
+        job_context="/kv/tclk-job/verify-e2e",
+        expires_ms=None,
+    )
+
+    context = (
+        "verification | From the note /kv/tclk-mat-d4/example "
+        "how many rows are lock frames posted by "
+        "did:key:z6MkTarget? Give the count."
+    )
+
+    material = (
+        "seq | time | type | from | ref "
+        "1 | 10:00 | offer | did:key:z6MkTarget | 0xaaa "
+        "2 | 10:01 | lock | did:key:z6MkTarget | tclk-aa/one "
+        "3 | 10:02 | receipt | did:key:z6MkTarget | tclk-aa/one "
+        "4 | 10:03 | lock | did:key:z6MkOther | tclk-bb/two "
+        "5 | 10:04 | lock | did:key:z6MkTarget | tclk-cc/three"
+    )
+
+    def fake_get_text(path):
+        if path == "/kv/tclk-job/verify-e2e":
+            return context
+
+        if path == "/kv/tclk-mat-d4/example":
+            return material
+
+        raise AssertionError(f"unexpected path: {path}")
+
+    result = process_opportunity(
+        opportunity,
+        fake_get_text,
+    )
+
+    assert result["task_id"] == "tclk:0xverify-e2e"
+    assert result["status"] == "completed"
+    assert result["verified"] is True
+    assert result["written"] is True
+    assert result["result_hash"].startswith("sha256:")

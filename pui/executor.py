@@ -3,7 +3,11 @@ from datetime import datetime, timezone
 import hashlib
 
 from .task import Task
-from .blockrewards import solve_census, solve_math
+from .blockrewards import (
+    solve_census,
+    solve_math,
+    solve_verification_lock_count,
+)
 
 
 @dataclass(frozen=True)
@@ -62,6 +66,27 @@ def execute_task(task: Task) -> TaskResult:
             )
 
         output = solve_math(job_context_text)
+
+    elif task.task_type == "blockrewards_verification_lock_count":
+        job_context_text = task.payload.get("job_context_text")
+        material_text = task.payload.get("material_text")
+
+        if not isinstance(job_context_text, str):
+            raise ValueError(
+                "blockrewards_verification_lock_count requires "
+                "string payload field: job_context_text"
+            )
+
+        if not isinstance(material_text, str):
+            raise ValueError(
+                "blockrewards_verification_lock_count requires "
+                "string payload field: material_text"
+            )
+
+        output = solve_verification_lock_count(
+            job_context_text,
+            material_text,
+        )
 
     else:
         raise ValueError(

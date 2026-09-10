@@ -4,7 +4,11 @@ import hashlib
 
 from .task import Task
 from .executor import TaskResult
-from .blockrewards import solve_census, solve_math
+from .blockrewards import (
+    solve_census,
+    solve_math,
+    solve_verification_lock_count,
+)
 
 
 @dataclass(frozen=True)
@@ -54,6 +58,19 @@ def verify_task_result(task: Task, result: TaskResult) -> TaskReceipt:
 
             if isinstance(job_context_text, str):
                 expected_output = solve_math(job_context_text)
+
+        elif task.task_type == "blockrewards_verification_lock_count":
+            job_context_text = task.payload.get("job_context_text")
+            material_text = task.payload.get("material_text")
+
+            if (
+                isinstance(job_context_text, str)
+                and isinstance(material_text, str)
+            ):
+                expected_output = solve_verification_lock_count(
+                    job_context_text,
+                    material_text,
+                )
 
         if expected_output is not None:
             verified = result.output == expected_output
