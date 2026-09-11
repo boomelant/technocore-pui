@@ -11,10 +11,15 @@ from pui.opportunity import (
 from pui.opportunity_state import write_opportunity_state
 from pui.technocore import read_room, get_text
 from pui.task_runner import process_opportunity
+from pui.sonnet import (
+    inspect as inspect_sonnet,
+    prepare_review_action as prepare_sonnet_review_action,
+)
 
 
 HEALTH_PATH = Path("data/agent-health.json")
 OPPORTUNITY_INTERVAL = 60
+SONNET_INTERVAL = 30
 
 
 def scan_opportunity_once() -> dict:
@@ -71,6 +76,7 @@ def write_health(
     total_scanned: int,
     total_queued: int,
     room_stats: dict,
+    sonnet_state: dict | None = None,
 ) -> None:
     HEALTH_PATH.parent.mkdir(parents=True, exist_ok=True)
 
@@ -81,6 +87,7 @@ def write_health(
         "total_scanned": total_scanned,
         "total_queued": total_queued,
         "rooms": room_stats,
+        "sonnet": sonnet_state,
     }
 
     HEALTH_PATH.write_text(
@@ -106,6 +113,9 @@ def main(interval: int = 15):
     print("scan interval:", interval, "seconds")
 
     last_opportunity_scan = 0.0
+    last_sonnet_scan = 0.0
+    last_sonnet_action = None
+    sonnet_health = None
 
     while True:
         room_stats = {}
@@ -139,6 +149,46 @@ def main(interval: int = 15):
                 )
 
             last_opportunity_scan = now_monotonic
+
+        if now_monotonic - last_sonnet_scan >= SONNET_INTERVAL:
+            try:
+                sonnet = inspect_sonnet()
+                review = prepare_sonnet_review_action(sonnet)
+                sonnet_health = {
+                    "checked_at": sonnet.checked_at,
+                    "launch_seen": sonnet.launch_seen,
+                    "referee_did": sonnet.referee_did,
+                    "registration_window": sonnet.registration_window,
+                    "best_action": sonnet.best_action,
+                    "public_action_required": sonnet.public_action_required,
+                    "reason": sonnet.reason,
+                    "coverage": sonnet.coverage,
+                    "missing_letters": sonnet.missing_letters,
+                    "review_status": review.get("status"),
+                    "review_queued": review.get("queued", False),
+                }
+
+                if sonnet.best_action != last_sonnet_action:
+                    print(
+                        "sonnet:",
+                        sonnet.best_action,
+                        "| launch:",
+                        "seen" if sonnet.launch_seen else "waiting",
+                        "| referee:",
+                        sonnet.referee_did or "unknown",
+                    )
+                    print("sonnet reason:", sonnet.reason)
+
+                    last_sonnet_action = sonnet.best_action
+
+            except Exception as exc:
+                print(
+                    "sonnet ERROR:",
+                    type(exc).__name__,
+                    str(exc),
+                )
+
+            last_sonnet_scan = now_monotonic
 
         for room in ROOMS:
             try:
@@ -186,6 +236,7 @@ def main(interval: int = 15):
             total_scanned=total_scanned,
             total_queued=total_queued,
             room_stats=room_stats,
+            sonnet_state=sonnet_health,
         )
 
         time.sleep(interval)
