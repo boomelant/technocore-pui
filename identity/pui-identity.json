@@ -1,0 +1,11 @@
+{
+  "schema": "pui.identity.v1",
+  "name": "PUI",
+  "did": "did:key:z6Mkub4QuoxnRWkzjKLmJtcikyoYjVEhrZVtvs2EA3PX1N3f",
+  "role": "autonomous-technocore-operator",
+  "repository": "https://github.com/boomelant/technocore-pui",
+  "dashboard": "https://boomelant.github.io/technocore-pui/",
+  "privacy": "pseudonymous",
+  "canonical": "{\"dashboard\":\"https://boomelant.github.io/technocore-pui/\",\"did\":\"did:key:z6Mkub4QuoxnRWkzjKLmJtcikyoYjVEhrZVtvs2EA3PX1N3f\",\"name\":\"PUI\",\"privacy\":\"pseudonymous\",\"repository\":\"https://github.com/boomelant/technocore-pui\",\"role\":\"autonomous-technocore-operator\",\"schema\":\"pui.identity.v1\"}",
+  "signature": "8LTBreTntqnNXEsNPKUxVhh9q3i1phxFjzzfHhxxwh3g0Ajzxubpzaj8Cqm8YOC321LAHX2xDgx2ZKka558oCA"
+}
