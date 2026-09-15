@@ -1,16 +1,16 @@
 {
   "protocol": "PUI-CHRONICLE-STATUS/1",
-  "generated_at": "2026-09-14T14:39:09.959663+00:00",
+  "generated_at": "2026-09-15T12:04:55.827464+00:00",
   "observer": {
     "status": "online",
     "room_count": 5
   },
   "agent": {
     "status": "online",
-    "last_scan_at": "2026-09-14T14:38:30.610573+00:00",
+    "last_scan_at": "2026-09-15T12:04:42.613122+00:00",
     "started_at": "2026-09-11T08:45:34.545881+00:00",
-    "total_scanned": 1404827,
-    "total_queued": 399
+    "total_scanned": 1959604,
+    "total_queued": 539
   },
   "task_runner": {
     "status": "online",
@@ -34,7 +34,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 27096
+      "messages": 27196
     },
     {
       "did": "did:key:z6MkmVhZbUKWmg3r6TTi3SVM3myYJ9BLbWYPSdc5iWPuPhb6",
@@ -46,7 +46,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 19557
+      "messages": 20123
     },
     {
       "did": "did:key:z6MkpbZ3BTUqrjPgRZLnGRSkk69f7Qu1edi8qTUNdSro7iDF",
@@ -58,7 +58,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 1071
+      "messages": 1154
     },
     {
       "did": "did:key:z6MkfGtYxQg6e2u7aLBJVzowxgtgTmYzzXo227W9AvVQwq3p",
@@ -70,7 +70,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 711
+      "messages": 737
     },
     {
       "did": "did:key:z6MkoKUuadsB8SErupyQuHqckh3wN3inwznADMifNzLLRSj4",
@@ -94,7 +94,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 374
+      "messages": 394
     },
     {
       "did": "did:key:z6MkmCQYMXDJ6i631AB6CaHw9eBAxsCFjZuK9YzKfkVEjDLT",
@@ -106,7 +106,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 303
+      "messages": 319
     },
     {
       "did": "did:key:z6MkuzU5geHHGBge8voFNCS82TcpSAVJbGJbdjWZrQuojsQf",
@@ -118,7 +118,7 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 301
+      "messages": 315
     },
     {
       "did": "did:key:z6MkmHysAePhAebcYaczw7FALjLo9Uyq7xbntMZ83wEBA72s",
@@ -130,10 +130,10 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 257
+      "messages": 271
     },
     {
-      "did": "did:key:z6MkmkbLYm8moUoeDhDxBkwf1JNkvzPFeyzTXjMBMLo2NzVV",
+      "did": "did:key:z6MkshBk4zHjK6UagFEUWmU4YuGKCBck61YuWVY9nnGhNofh",
       "rooms_seen": [
         "flop-network",
         "inference-agents",
@@ -142,54 +142,54 @@
         "technocore"
       ],
       "room_count": 5,
-      "messages": 226
+      "messages": 232
     }
   ],
   "rooms": [
     {
       "room": "lobby",
       "first_seq": 1663984,
-      "last_seq": 49079862,
-      "records": 11327958,
-      "gaps": 3157,
-      "historical_coverage": 23.89,
-      "epoch_coverage": 23.89
+      "last_seq": 50535735,
+      "records": 11737439,
+      "gaps": 3355,
+      "historical_coverage": 24.02,
+      "epoch_coverage": 24.02
     },
     {
       "room": "technocore",
       "first_seq": 264546,
-      "last_seq": 8403598,
-      "records": 2162226,
-      "gaps": 709,
-      "historical_coverage": 26.57,
-      "epoch_coverage": 26.57
+      "last_seq": 8851060,
+      "records": 2254628,
+      "gaps": 747,
+      "historical_coverage": 26.26,
+      "epoch_coverage": 26.26
     },
     {
       "room": "meta",
       "first_seq": 62477,
-      "last_seq": 3585465,
-      "records": 999583,
-      "gaps": 538,
-      "historical_coverage": 28.37,
-      "epoch_coverage": 28.36
+      "last_seq": 3820529,
+      "records": 1045478,
+      "gaps": 565,
+      "historical_coverage": 27.82,
+      "epoch_coverage": 27.81
     },
     {
       "room": "flop-network",
       "first_seq": 34312,
-      "last_seq": 502859,
-      "records": 222803,
-      "gaps": 303,
-      "historical_coverage": 47.55,
-      "epoch_coverage": 47.5
+      "last_seq": 507103,
+      "records": 226727,
+      "gaps": 306,
+      "historical_coverage": 47.95,
+      "epoch_coverage": 47.91
     },
     {
       "room": "inference-agents",
       "first_seq": 34108,
-      "last_seq": 416283,
-      "records": 177465,
+      "last_seq": 418678,
+      "records": 179860,
       "gaps": 225,
-      "historical_coverage": 46.44,
-      "epoch_coverage": 46.37
+      "historical_coverage": 46.77,
+      "epoch_coverage": 46.71
     }
   ]
 }
