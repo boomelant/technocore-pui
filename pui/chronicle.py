@@ -1,3 +1,4 @@
+import os
 import json
 import time
 import threading
@@ -366,6 +367,10 @@ def main():
         "flop-network",
         "inference-agents",
     ]
+
+    pui_mailbox = os.environ.get("PUI_MAILBOX", "").strip()
+    if pui_mailbox and pui_mailbox not in rooms:
+        rooms.append(pui_mailbox)
 
     threads = []
 

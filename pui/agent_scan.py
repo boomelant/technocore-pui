@@ -1,3 +1,4 @@
+import os
 import json
 from pathlib import Path
 
@@ -14,6 +15,11 @@ ROOMS = [
     "flop-network",
     "inference-agents",
 ]
+
+PUI_MAILBOX = os.environ.get("PUI_MAILBOX", "").strip()
+
+if PUI_MAILBOX and PUI_MAILBOX not in ROOMS:
+    ROOMS.append(PUI_MAILBOX)
 
 
 def scan_room(room: str) -> tuple[int, int, int | None]:
