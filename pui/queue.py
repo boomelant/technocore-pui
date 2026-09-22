@@ -3,7 +3,7 @@ from pathlib import Path
 
 from pui.decision import evaluate_event
 from pui.mailbox import evaluate_mailbox_event
-from pui.mailbox import classify_mailbox_record
+from pui.mailbox_review_queue import queue_mailbox_review
 
 
 QUEUE_PATH = Path("data/agent-queue.jsonl")
@@ -43,45 +43,8 @@ def queue_event(record: dict) -> bool:
     room = record.get("room", "")
 
     if isinstance(room, str) and room.startswith("mb-p-pui-"):
-        mailbox = classify_mailbox_record(record)
-
-        if mailbox.action == "IGNORE":
-            return False
-
-        key = event_key(record)
-
-        if key in load_seen_keys():
-            return False
-
-        entry = {
-            "event_key": key,
-            "room": record.get("room"),
-            "seq": record.get("seq"),
-            "ts": record.get("ts"),
-            "from": record.get("from"),
-            "text": record.get("text"),
-            "category": "mailbox",
-            "confidence": 1.0 if mailbox.signed else 0.0,
-            "source_trust": "signed" if mailbox.signed else "unknown",
-            "policy": mailbox.action,
-            "execute": False,
-            "reason": mailbox.reason,
-            "priority": mailbox.priority,
-        }
-
-        QUEUE_PATH.parent.mkdir(parents=True, exist_ok=True)
-
-        with QUEUE_PATH.open("a", encoding="utf-8") as handle:
-            handle.write(
-                json.dumps(
-                    entry,
-                    ensure_ascii=False,
-                    separators=(",", ":"),
-                )
-                + "\n"
-            )
-
-        return True
+        evaluation = evaluate_mailbox_event(record)
+        return queue_mailbox_review(record, evaluation)
 
     evaluation = evaluate_event(record)
 
@@ -107,10 +70,6 @@ def queue_event(record: dict) -> bool:
         "execute": evaluation.execute,
         "reason": evaluation.reason,
     }
-
-    priority = getattr(evaluation, "priority", None)
-    if priority is not None:
-        entry["priority"] = priority
 
     QUEUE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
