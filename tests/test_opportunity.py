@@ -141,7 +141,7 @@ def test_opportunity_snapshot():
     assert snapshot["opportunity"]["offer_id"] == "0x777"
     assert snapshot["decision"]["eligible"] is True
 
-def test_discover_latest_eligible_opportunity_skips_unsupported():
+def test_discover_latest_eligible_opportunity_accepts_supported_a2a():
     from pui.opportunity import discover_latest_eligible_opportunity
 
     def fake_read_room(room, limit=200):
@@ -173,9 +173,9 @@ def test_discover_latest_eligible_opportunity_skips_unsupported():
     opportunity = discover_latest_eligible_opportunity(fake_read_room)
 
     assert opportunity is not None
-    assert opportunity.seq == 10
-    assert opportunity.offer_id == "0xold"
-    assert opportunity.job_proto == "blockrewards"
+    assert opportunity.seq == 11
+    assert opportunity.offer_id == "0xnew"
+    assert opportunity.job_proto == "a2a"
 
 
 def test_evaluate_job_context():
@@ -347,3 +347,45 @@ def test_evaluate_unsupported_verification_job_context():
     assert result["eligible"] is False
     assert result["job_type"] == "verification"
     assert result["reason"] == "unsupported_verification_task"
+
+
+def test_evaluate_opportunity_supports_a2a_paper_job():
+    from pui.opportunity import Opportunity, evaluate_opportunity
+
+    opportunity = Opportunity(
+        seq=1,
+        sender="did:key:z6MkExample",
+        offer_id="0xa2a",
+        amount="200",
+        asset="FLOP",
+        rails=("paper",),
+        job_proto="a2a",
+        job_context="/kv/tclk-job-en/example",
+        expires_ms=None,
+    )
+
+    result = evaluate_opportunity(opportunity)
+
+    assert result["eligible"] is True
+    assert result["reason"] == "supported_a2a_job"
+
+
+def test_evaluate_opportunity_rejects_a2a_without_paper():
+    from pui.opportunity import Opportunity, evaluate_opportunity
+
+    opportunity = Opportunity(
+        seq=1,
+        sender="did:key:z6MkExample",
+        offer_id="0xa2a-no-paper",
+        amount="200",
+        asset="FLOP",
+        rails=("flop-htlc",),
+        job_proto="a2a",
+        job_context="/kv/tclk-job-en/example",
+        expires_ms=None,
+    )
+
+    result = evaluate_opportunity(opportunity)
+
+    assert result["eligible"] is False
+    assert result["reason"] == "unsupported_rail"

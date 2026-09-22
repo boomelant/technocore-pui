@@ -85,7 +85,7 @@ def evaluate_opportunity(
             "reason": "expired_offer",
         }
 
-    if opportunity.job_proto != "blockrewards":
+    if opportunity.job_proto not in {"blockrewards", "a2a"}:
         return {
             "eligible": False,
             "reason": "unsupported_job_proto",
@@ -101,6 +101,12 @@ def evaluate_opportunity(
         return {
             "eligible": False,
             "reason": "missing_job_context",
+        }
+
+    if opportunity.job_proto == "a2a":
+        return {
+            "eligible": True,
+            "reason": "supported_a2a_job",
         }
 
     return {
