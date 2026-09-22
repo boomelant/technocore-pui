@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from pui.decision import evaluate_event
+from pui.mailbox import evaluate_mailbox_event
 from pui.mailbox import classify_mailbox_record
 
 
@@ -106,6 +107,10 @@ def queue_event(record: dict) -> bool:
         "execute": evaluation.execute,
         "reason": evaluation.reason,
     }
+
+    priority = getattr(evaluation, "priority", None)
+    if priority is not None:
+        entry["priority"] = priority
 
     QUEUE_PATH.parent.mkdir(parents=True, exist_ok=True)
 

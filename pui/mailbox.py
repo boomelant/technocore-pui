@@ -4,15 +4,17 @@ from pui.identity import public_did
 
 
 @dataclass
-class MailboxDecision:
-    action: str
+class MailboxEvaluation:
+    category: str
+    confidence: float
+    source_trust: str
+    policy: str
+    execute: bool
     reason: str
     priority: int
-    signed: bool
-    self_message: bool
 
 
-def is_signed_record(record: dict) -> bool:
+def has_signed_shape(record: dict) -> bool:
     sender = record.get("from")
     signature = record.get("sig")
     nonce = record.get("nonce")
@@ -26,41 +28,47 @@ def is_signed_record(record: dict) -> bool:
     )
 
 
-def classify_mailbox_record(record: dict) -> MailboxDecision:
+def evaluate_mailbox_event(
+    record: dict,
+    *,
+    root_did: str | None = None,
+) -> MailboxEvaluation:
     sender = record.get("from")
     text = str(record.get("text") or "").strip()
+    root = root_did or public_did()
 
-    signed = is_signed_record(record)
-    self_message = sender == public_did()
-
-    if self_message:
-        return MailboxDecision(
-            action="IGNORE",
+    if sender == root:
+        return MailboxEvaluation(
+            category="mailbox",
+            confidence=1.0,
+            source_trust="self",
+            policy="IGNORE",
+            execute=False,
             reason="Self-authored mailbox message",
             priority=0,
-            signed=signed,
-            self_message=True,
         )
 
-    if not signed:
-        return MailboxDecision(
-            action="IGNORE",
-            reason="Unsigned mailbox message",
+    if not has_signed_shape(record):
+        return MailboxEvaluation(
+            category="mailbox",
+            confidence=0.0,
+            source_trust="unknown",
+            policy="IGNORE",
+            execute=False,
+            reason="Mailbox record has no signed-message fields",
             priority=0,
-            signed=False,
-            self_message=False,
         )
 
     if not text:
-        return MailboxDecision(
-            action="IGNORE",
-            reason="Empty mailbox message",
+        return MailboxEvaluation(
+            category="mailbox",
+            confidence=1.0,
+            source_trust="signed-mailbox",
+            policy="IGNORE",
+            execute=False,
+            reason="Empty signed mailbox message",
             priority=0,
-            signed=True,
-            self_message=False,
         )
-
-    lowered = text.lower()
 
     high_signal_terms = (
         "task",
@@ -76,19 +84,23 @@ def classify_mailbox_record(record: dict) -> MailboxDecision:
         "tclk1 ",
     )
 
-    if any(term in lowered for term in high_signal_terms):
-        return MailboxDecision(
-            action="REVIEW",
-            reason="Signed mailbox message contains actionable intent",
+    if any(term in text.lower() for term in high_signal_terms):
+        return MailboxEvaluation(
+            category="mailbox",
+            confidence=1.0,
+            source_trust="signed-mailbox",
+            policy="REVIEW",
+            execute=False,
+            reason="Signed mailbox record contains actionable intent",
             priority=90,
-            signed=True,
-            self_message=False,
         )
 
-    return MailboxDecision(
-        action="REVIEW",
-        reason="Signed mailbox message from external DID",
+    return MailboxEvaluation(
+        category="mailbox",
+        confidence=1.0,
+        source_trust="signed-mailbox",
+        policy="REVIEW",
+        execute=False,
+        reason="External signed mailbox record",
         priority=70,
-        signed=True,
-        self_message=False,
     )
