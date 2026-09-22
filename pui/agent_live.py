@@ -11,6 +11,7 @@ from pui.opportunity import (
 from pui.opportunity_state import write_opportunity_state
 from pui.technocore import read_room, get_text
 from pui.task_runner import process_opportunity
+from pui.reasoning_packet import prepare_reasoning_packet
 from pui.sonnet import (
     inspect as inspect_sonnet,
     prepare_review_action as prepare_sonnet_review_action,
@@ -227,6 +228,18 @@ def main(interval: int = 15):
                     type(exc).__name__,
                     str(exc),
                 )
+
+        handoff = prepare_reasoning_packet()
+
+        if handoff.get("status") == "ready":
+            print(
+                "gpt handoff:",
+                handoff.get("review_key"),
+                "priority:",
+                handoff.get("priority"),
+                "worker:",
+                handoff.get("worker_recommended"),
+            )
 
         last_scan_at = datetime.now(timezone.utc).isoformat()
 
