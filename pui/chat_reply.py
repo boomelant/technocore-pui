@@ -42,7 +42,8 @@ def prepare_reply(room: str, source_seq: int, reply: str, *, read=read_room) -> 
         raise ValueError("empty reply after cleaning")
     return {
         "room": room, "source_seq": source_seq, "source_sender": sender,
-        "source_text": source.get("text", ""), "text": text,
+        "source_text": source.get("text", ""), "source_sig": source["sig"],
+        "text": text,
         "status": "ready_for_review",
     }
 
@@ -58,7 +59,10 @@ def send_reviewed_reply(
         draft["room"], draft["source_seq"],
         draft["text"].split("): ", 1)[-1], read=read,
     )
-    if fresh["source_sender"] != draft["source_sender"] or fresh["text"] != draft["text"]:
+    if (fresh["source_sender"] != draft["source_sender"] or
+            fresh["source_sig"] != draft["source_sig"] or
+            fresh["source_text"] != draft["source_text"] or
+            fresh["text"] != draft["text"]):
         raise ValueError("draft/source mismatch")
     room, text = fresh["room"], fresh["text"]
     did = public_did()
