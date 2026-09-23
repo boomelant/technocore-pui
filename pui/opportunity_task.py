@@ -95,6 +95,10 @@ def build_task_from_opportunity(
     if not opportunity.job_context:
         raise ValueError("opportunity requires job context")
 
+    # No A2A task constructor/executor exists yet: fail closed before I/O.
+    if opportunity.job_proto != "blockrewards":
+        raise ValueError(f"unsupported task protocol: {opportunity.job_proto}")
+
     context_text = get_text_func(opportunity.job_context)
     job_type = classify_job_context(context_text)
 
