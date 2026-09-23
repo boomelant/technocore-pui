@@ -276,6 +276,11 @@ def discover_latest_executable_opportunity(
         if not opportunity.job_context:
             continue
 
+        # A2A is discoverable, but has no trusted task executor yet.
+        # Never classify an A2A context as BlockRewards or auto-execute it.
+        if opportunity.job_proto != "blockrewards":
+            continue
+
         context_text = get_text_func(opportunity.job_context)
         decision = evaluate_job_context(context_text)
 
