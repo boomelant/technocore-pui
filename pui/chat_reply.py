@@ -26,7 +26,15 @@ def prepare_reply(room: str, source_seq: int, reply: str, *, read=read_room) -> 
     messages = read(room, limit=200).get("messages", [])
     source = next((m for m in messages if m.get("seq") == source_seq), None)
     if source is None:
-        raise ValueError("source record not found in current room window")
+        # Busy rooms can move a valid source beyond the latest 200 records.
+        # Query the exact cursor instead of silently replying to a different post.
+        try:
+            historical = read(room, limit=20, since=source_seq - 1).get("messages", [])
+        except TypeError:
+            historical = []  # Legacy injected readers may not support cursors.
+        source = next((m for m in historical if m.get("seq") == source_seq), None)
+    if source is None:
+        raise ValueError("source record not found; it may be outside venue retention")
     sender = source.get("from")
     if not isinstance(sender, str) or not sender.startswith("did:key:"):
         raise ValueError("source is not attributable to a DID")
