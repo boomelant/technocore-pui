@@ -14,6 +14,15 @@ class MailboxEvaluation:
     priority: int
 
 
+def valid_nonce_shape(value) -> bool:
+    """Preserve large signed nonces; reject floats, bools and malformed text."""
+    if type(value) is int:
+        return value >= 0
+    if isinstance(value, str):
+        return bool(value) and value.isascii() and value.isdecimal()
+    return False
+
+
 def has_signed_shape(record: dict) -> bool:
     sender = record.get("from")
     signature = record.get("sig")
@@ -24,7 +33,7 @@ def has_signed_shape(record: dict) -> bool:
         and sender.startswith("did:key:")
         and isinstance(signature, str)
         and bool(signature)
-        and nonce is not None
+        and valid_nonce_shape(nonce)
     )
 
 
