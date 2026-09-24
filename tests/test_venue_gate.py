@@ -19,13 +19,13 @@ def envelope(room=ROOM, nonce="9007199254740993111", text="tclk1 valid-fixture")
         format=serialization.PublicFormat.Raw,
     )
     alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
-    raw = b"\\xed\\x01" + public
+    raw = bytes([0xed, 0x01]) + public
     n = int.from_bytes(raw, "big")
     encoded = ""
     while n:
         n, rem = divmod(n, 58)
         encoded = alphabet[rem] + encoded
-    encoded = "1" * (len(raw) - len(raw.lstrip(b"\\0"))) + encoded
+    encoded = "1" * (len(raw) - len(raw.lstrip(bytes([0])))) + encoded
     signature = key.sign(f"{room}|{nonce}|{text}".encode())
     return {
         "did": "did:key:z" + encoded, "nonce": nonce, "text": text,
