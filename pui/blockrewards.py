@@ -76,13 +76,13 @@ def classify_job_context(job_context_text: str) -> str:
     if "fold this tclk/1 transcript" in text or "foldtranscript" in text:
         return "protocol_fold"
 
-    if text.lstrip().startswith("math |"):
+    if re.search(r"(?m)^math\s*\|", text):
         return "math"
 
-    if text.lstrip().startswith("validation |"):
+    if re.search(r"(?m)^validation\s*\|", text):
         return "validation"
 
-    if text.lstrip().startswith("verification |"):
+    if re.search(r"(?m)^verification\s*\|", text):
         return "verification"
 
     return "unsupported"
@@ -94,6 +94,53 @@ MATH_GCD_LCM_PATTERN = re.compile(
 )
 
 
+# Only explicitly supported single-line prime tasks. 64-bit MR bases provide
+# deterministic primality for all n < 2**64; cap work far below that limit.
+PRIME_TASK_PATTERN = re.compile(
+    r"(?im)^math\s*\|[^\n]*?smallest prime strictly greater than\s+(\d+)\?"
+)
+
+
+def _is_prime_64(n: int) -> bool:
+    if n < 2:
+        return False
+    for p in (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37):
+        if n % p == 0:
+            return n == p
+    d, s = n - 1, 0
+    while d % 2 == 0:
+        d //= 2
+        s += 1
+    for a in (2, 325, 9375, 28178, 450775, 9780504, 1795265022):
+        if a % n == 0:
+            continue
+        x = pow(a, d, n)
+        if x in (1, n - 1):
+            continue
+        for _ in range(s - 1):
+            x = x * x % n
+            if x == n - 1:
+                break
+        else:
+            return False
+    return True
+
+
+def _next_prime_bounded(n: int) -> int:
+    if n < 0 or n > 10**15:
+        raise ValueError("prime task input outside bounded range")
+    candidate = n + 1
+    if candidate <= 2:
+        return 2
+    if candidate % 2 == 0:
+        candidate += 1
+    for _ in range(5000):
+        if _is_prime_64(candidate):
+            return candidate
+        candidate += 2
+    raise ValueError("prime search bound exhausted")
+
+
 def solve_math(job_context_text: str) -> dict:
     import math
 
@@ -103,7 +150,12 @@ def solve_math(job_context_text: str) -> dict:
     match = MATH_GCD_LCM_PATTERN.search(job_context_text)
 
     if match is None:
-        raise ValueError("unsupported math task")
+        prime = PRIME_TASK_PATTERN.search(job_context_text)
+        if prime is None:
+            raise ValueError("unsupported math task")
+        result = _next_prime_bounded(int(prime.group(1)))
+        return {"prime": result, "answer": str(result)}
+
 
     a = int(match.group(1))
     b = int(match.group(2))
@@ -122,6 +174,9 @@ def supports_math_job(job_context_text: str) -> bool:
     if not isinstance(job_context_text, str):
         return False
 
+    prime = PRIME_TASK_PATTERN.search(job_context_text)
+    if prime is not None:
+        return int(prime.group(1)) <= 10**15
     return MATH_GCD_LCM_PATTERN.search(job_context_text) is not None
 
 
