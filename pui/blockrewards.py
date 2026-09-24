@@ -59,97 +59,17 @@ def extract_material_path(job_context_text: str) -> str:
     match = MATERIAL_PATH_PATTERN.search(job_context_text)
 
     if match is None:
-        raise ValueError("material path not found")
-
-    return match.group(1)
-
-
-def classify_job_context(job_context_text: str) -> str:
-    if not isinstance(job_context_text, str) or not job_context_text.strip():
-        return "unknown"
-
-    text = job_context_text.lower()
-
-    if "census" in text and "/kv/tclk-mat-" in text:
-        return "census"
-
-    if "fold this tclk/1 transcript" in text or "foldtranscript" in text:
-        return "protocol_fold"
-
-    if re.search(r"(?m)^math\s*\|", text):
-        return "math"
-
-    if re.search(r"(?m)^validation\s*\|", text):
-        return "validation"
-
-    if re.search(r"(?m)^verification\s*\|", text):
-        return "verification"
-
-    return "unsupported"
-
-
-MATH_GCD_LCM_PATTERN = re.compile(
-    r'compute\s+gcd\((\d+),\s*(\d+)\)\s+and\s+lcm\(\1,\s*\2\)',
-    re.IGNORECASE,
-)
-
-
-# Only explicitly supported single-line prime tasks. 64-bit MR bases provide
-# deterministic primality for all n < 2**64; cap work far below that limit.
-PRIME_TASK_PATTERN = re.compile(
-    r"(?im)^math\s*\|[^\n]*?smallest prime strictly greater than\s+(\d+)\?"
-)
-
-
-def _is_prime_64(n: int) -> bool:
-    if n < 2:
-        return False
-    for p in (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37):
-        if n % p == 0:
-            return n == p
-    d, s = n - 1, 0
-    while d % 2 == 0:
-        d //= 2
-        s += 1
-    for a in (2, 325, 9375, 28178, 450775, 9780504, 1795265022):
-        if a % n == 0:
-            continue
-        x = pow(a, d, n)
-        if x in (1, n - 1):
-            continue
-        for _ in range(s - 1):
-            x = x * x % n
-            if x == n - 1:
-                break
-        else:
-            return False
-    return True
-
-
-def _next_prime_bounded(n: int) -> int:
-    if n < 0 or n > 10**15:
-        raise ValueError("prime task input outside bounded range")
-    candidate = n + 1
-    if candidate <= 2:
-        return 2
-    if candidate % 2 == 0:
-        candidate += 1
-    for _ in range(5000):
-        if _is_prime_64(candidate):
-            return candidate
-        candidate += 2
-    raise ValueError("prime search bound exhausted")
-
-
-def solve_math(job_context_text: str) -> dict:
-    import math
-
-    if not isinstance(job_context_text, str) or not job_context_text.strip():
-        raise ValueError("math job context is required")
-
-    match = MATH_GCD_LCM_PATTERN.search(job_context_text)
-
-    if match is None:
+        inverse = MODULAR_INVERSE_PATTERN.search(job_context_text)
+        if inverse is not None:
+            a = int(inverse.group(1))
+            modulus = int(inverse.group(2))
+            if a <= 0 or modulus <= 1 or modulus > 10**15:
+                raise ValueError("modular inverse input outside bounded range")
+            try:
+                result = pow(a, -1, modulus)
+            except ValueError as exc:
+                raise ValueError("modular inverse does not exist") from exc
+            return {"inverse": result, "answer": str(result)}
         prime = PRIME_TASK_PATTERN.search(job_context_text)
         if prime is None:
             raise ValueError("unsupported math task")
@@ -174,6 +94,11 @@ def supports_math_job(job_context_text: str) -> bool:
     if not isinstance(job_context_text, str):
         return False
 
+    inverse = MODULAR_INVERSE_PATTERN.search(job_context_text)
+    if inverse is not None:
+        a = int(inverse.group(1))
+        modulus = int(inverse.group(2))
+        return 0 < a < 10**15 and 1 < modulus <= 10**15
     prime = PRIME_TASK_PATTERN.search(job_context_text)
     if prime is not None:
         return int(prime.group(1)) <= 10**15
