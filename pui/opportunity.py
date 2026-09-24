@@ -234,6 +234,11 @@ def evaluate_job_context(job_context_text: str) -> dict:
             "reason": "unsupported_verification_task",
         }
 
+    if job_type == "validation":
+        # Do not treat a private reference answer or quoted nested task as proof.
+        return {"eligible": False, "job_type": "validation",
+                "reason": "reference_not_independently_verifiable"}
+
     if job_type == "protocol_fold":
         return {
             "eligible": False,
