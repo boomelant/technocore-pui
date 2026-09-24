@@ -92,6 +92,9 @@ def build_task_from_opportunity(
     opportunity: Opportunity,
     get_text_func,
 ) -> Task:
+    if opportunity.job_proto != "blockrewards":
+        raise ValueError(f"unsupported task protocol: {opportunity.job_proto}")
+
     if not opportunity.job_context:
         raise ValueError("opportunity requires job context")
 
