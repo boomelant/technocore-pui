@@ -94,6 +94,13 @@ MATH_GCD_LCM_PATTERN = re.compile(
 )
 
 
+MODULAR_INVERSE_PATTERN = re.compile(
+    r'find the modular inverse of\s+(\d+)\s+modulo\s+(\d+).*?'
+    r'with\s+\1(?:·|\*)x\s*≡\s*1\s*\(mod\s*\2\)',
+    re.IGNORECASE | re.DOTALL,
+)
+
+
 # Only explicitly supported single-line prime tasks. 64-bit MR bases provide
 # deterministic primality for all n < 2**64; cap work far below that limit.
 PRIME_TASK_PATTERN = re.compile(
@@ -150,6 +157,18 @@ def solve_math(job_context_text: str) -> dict:
     match = MATH_GCD_LCM_PATTERN.search(job_context_text)
 
     if match is None:
+        inverse = MODULAR_INVERSE_PATTERN.search(job_context_text)
+        if inverse is not None:
+            a = int(inverse.group(1))
+            modulus = int(inverse.group(2))
+            if modulus <= 1 or modulus > 10**15:
+                raise ValueError("modular inverse input outside bounded range")
+            try:
+                value = pow(a, -1, modulus)
+            except ValueError as exc:
+                raise ValueError("modular inverse does not exist") from exc
+            return {"inverse": value, "answer": str(value)}
+
         prime = PRIME_TASK_PATTERN.search(job_context_text)
         if prime is None:
             raise ValueError("unsupported math task")
@@ -173,6 +192,11 @@ def solve_math(job_context_text: str) -> dict:
 def supports_math_job(job_context_text: str) -> bool:
     if not isinstance(job_context_text, str):
         return False
+
+    inverse = MODULAR_INVERSE_PATTERN.search(job_context_text)
+    if inverse is not None:
+        modulus = int(inverse.group(2))
+        return 1 < modulus <= 10**15
 
     prime = PRIME_TASK_PATTERN.search(job_context_text)
     if prime is not None:
