@@ -45,6 +45,6 @@ def test_unsupported_protocol_builder_rejected_before_context_fetch():
 
 def test_supported_blockrewards_math_still_builds_task():
     task = build_task_from_opportunity(
-        offer("blockrewards"), lambda path: '{"task":"math","operation":"gcd","a":12,"b":18}',
+        offer("blockrewards"), lambda path: "math | Compute gcd(12, 18) and lcm(12, 18)",
     )
     assert task.task_type == "blockrewards_math"
