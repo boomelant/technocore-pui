@@ -16,8 +16,8 @@ from typing import Callable
 from .publish_receipt import find_verified_publication
 from .signed_envelope import verify_room_envelope
 
-_DEAL_ROOM = re.compile(r"mb-p-tclk-[0-9a-f]{16}\\Z")
-_NONCE = re.compile(r"[0-9]+\\Z")
+_DEAL_ROOM = re.compile(r"mb-p-tclk-[0-9a-f]{16}")
+_NONCE = re.compile(r"[0-9]+")
 
 
 def assess_new_deal_room(room: str, capability_check: Callable[[str], bool]) -> dict:
