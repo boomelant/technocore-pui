@@ -18,8 +18,14 @@ def clean_room_text(text: str) -> str:
     return cleaned.strip()
 
 
+_last_nonce = 0
+
+
 def make_nonce() -> int:
-    return int(time.time() * 1000)
+    """Use a nanosecond-scale, process-monotonic nonce (not cross-isolate coordination)."""
+    global _last_nonce
+    _last_nonce = max(time.time_ns(), _last_nonce + 1)
+    return _last_nonce
 
 
 def get_text(path: str) -> str:
