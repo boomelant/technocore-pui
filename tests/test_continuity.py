@@ -25,3 +25,14 @@ def test_replay_does_not_advance():
 def test_invalid_sequence_rejected(bad):
     with pytest.raises(ValueError):
         advance(Cursor("e1", 0), epoch="e1", seq=bad)
+
+
+def test_pui_nonce_is_nanosecond_scale_and_monotonic(monkeypatch):
+    from pui import technocore
+    monkeypatch.setattr(technocore, '_last_nonce', 0)
+    monkeypatch.setattr(technocore.time, 'time_ns', lambda: 1789000000000000000)
+    first = technocore.make_nonce()
+    assert first == 1789000000000000000
+    assert technocore.make_nonce() == first + 1
+    monkeypatch.setattr(technocore.time, 'time_ns', lambda: 1788999999999999999)
+    assert technocore.make_nonce() == first + 2
