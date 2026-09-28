@@ -48,7 +48,7 @@ def scan_room(room: str) -> tuple[int, int, int | None]:
 
             seq = record.get("seq")
 
-            if not isinstance(seq, int):
+            if type(seq) is not int:
                 continue
 
             if last_processed is not None and seq <= last_processed:
