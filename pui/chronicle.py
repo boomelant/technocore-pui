@@ -202,7 +202,17 @@ def poll_room(room):
         print(room, "no records")
         return
 
-    records = [\n        record\n        for record in records\n        if isinstance(record, dict) and type(record.get("seq")) is int\n    ]\n\n    if not records:\n        print(room, "no valid records")\n        return\n\n    records = sorted(records, key=lambda x: x["seq"])
+    records = [
+        record
+        for record in records
+        if isinstance(record, dict) and type(record.get("seq")) is int
+    ]
+
+    if not records:
+        print(room, "no valid records")
+        return
+
+    records = sorted(records, key=lambda x: x["seq"])
 
     if state["last_seq"] is not None:
         expected = state["last_seq"] + 1
@@ -289,7 +299,17 @@ def follow_room(room, wait=5):
             print(room, "idle")
             continue
 
-        records = [\n            record\n            for record in records\n            if isinstance(record, dict) and type(record.get("seq")) is int\n        ]\n\n        if not records:\n            print(room, "no valid records")\n            return\n\n        records = sorted(records, key=lambda x: x["seq"])
+        records = [
+            record
+            for record in records
+            if isinstance(record, dict) and type(record.get("seq")) is int
+        ]
+
+        if not records:
+            print(room, "no valid records")
+            continue
+
+        records = sorted(records, key=lambda x: x["seq"])
 
         new_records = []
 
