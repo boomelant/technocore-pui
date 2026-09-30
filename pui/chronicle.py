@@ -219,11 +219,19 @@ def poll_room(room):
         first_seq = records[0].get("seq")
 
         if first_seq is not None and first_seq > expected:
-            state["gaps"].append({
+            gap = {
                 "from": expected,
                 "to": first_seq - 1,
                 "detected_at": int(time.time()),
-            })
+            }
+            if not state["gaps"] or {
+                "from": state["gaps"][-1]["from"],
+                "to": state["gaps"][-1]["to"],
+            } != {"from": gap["from"], "to": gap["to"]}:
+                state["gaps"].append(gap)
+                save_state(room, state)
+            print(room, "BLOCKED: gap", expected, "-", first_seq - 1)
+            return
 
     new_records = []
 
@@ -329,11 +337,20 @@ def follow_room(room, wait=5):
                 expected = state["last_seq"] + 1
 
                 if first_seq > expected:
-                    state["gaps"].append({
+                    gap = {
                         "from": expected,
                         "to": first_seq - 1,
                         "detected_at": int(time.time()),
-                    })
+                    }
+                    if not state["gaps"] or {
+                        "from": state["gaps"][-1]["from"],
+                        "to": state["gaps"][-1]["to"],
+                    } != {"from": gap["from"], "to": gap["to"]}:
+                        state["gaps"].append(gap)
+                        save_state(room, state)
+                    with PRINT_LOCK:
+                        print(room, "BLOCKED: gap", expected, "-", first_seq - 1)
+                    continue
 
             append_records(room, new_records)
 
