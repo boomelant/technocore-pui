@@ -4,7 +4,7 @@ import {
   bootstrapIdentityStep,
   observeAndDecideStep,
   postReplyStep,
-} from "./steps/pui-cycle";
+} from "./steps/pui-cycle-v2";
 
 export type PuiCloudState = {
   cycle: number;
@@ -18,6 +18,8 @@ export type PuiCloudState = {
   totalReplies: number;
   leaseValue: string | null;
   mailbox: string;
+  holder: string;
+  presence: string;
 };
 
 export async function puiAgentWorkflow(holder: string) {
@@ -41,6 +43,8 @@ export async function puiAgentWorkflow(holder: string) {
     totalReplies: bootstrap.presence === "confirmed" ? 1 : 0,
     leaseValue: firstLease.value,
     mailbox: bootstrap.mailbox,
+    holder,
+    presence: bootstrap.presence,
   };
 
   while (true) {
