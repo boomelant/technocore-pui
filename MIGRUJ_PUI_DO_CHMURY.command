@@ -73,6 +73,8 @@ if not x.get('identityMatch'):
     raise SystemExit('BŁĄD: cloud PUI_SEED nie odpowiada kanonicznemu DID')
 if not x.get('zeroCostMode') or not x.get('autonomousWrite'):
     raise SystemExit('BŁĄD: tryb zero-cost/autonomous write nie jest aktywny')
+if x.get('protocol') != 'PUI-CLOUD-RESIDENT/2':
+    raise SystemExit('BŁĄD: wdrożenie nie uruchomiło runtime PUI-CLOUD-RESIDENT/2')
 print('Cloud identity/config: OK')
 PY
 
@@ -81,6 +83,14 @@ if ! START="$("${VC[@]}" curl "$URL/api/agent/start" -- -fsS -X POST -H "Authori
   exit 5
 fi
 printf '%s\n' "$START"
+START_HOLDER="$(START_JSON="$START" python3 - <<'PY'
+import json, os
+x=json.loads(os.environ['START_JSON'])
+if x.get('status') != 'started' or not x.get('holder'):
+    raise SystemExit('BŁĄD: /api/agent/start nie zwrócił holdera uruchomionego workflow')
+print(x['holder'])
+PY
+)"
 
 OK=0
 for delay in 5 10 20 30; do
@@ -88,15 +98,19 @@ for delay in 5 10 20 30; do
   if ! HEALTH="$("${VC[@]}" curl "$URL/api/agent/health" -- -fsS)"; then
     continue
   fi
-  if HEALTH_JSON="$HEALTH" python3 - <<'PY'
+  if START_HOLDER="$START_HOLDER" HEALTH_JSON="$HEALTH" python3 - <<'PY'
 import json, os
 x=json.loads(os.environ['HEALTH_JSON'])
 s=x.get('residentStatus')
-if not isinstance(s, dict) or s.get('protocol') != 'PUI-CLOUD-RESIDENT/1':
+if not isinstance(s, dict) or s.get('protocol') != 'PUI-CLOUD-RESIDENT/2':
     raise SystemExit(1)
 if s.get('did') != 'did:key:z6Mkub4QuoxnRWkzjKLmJtcikyoYjVEhrZVtvs2EA3PX1N3f':
     raise SystemExit(1)
-print(json.dumps({'cycle':s.get('cycle'),'observed':s.get('totalObserved'),'replies':s.get('totalReplies'),'watchRooms':s.get('watchRooms')}, ensure_ascii=False))
+if s.get('holder') != os.environ['START_HOLDER']:
+    raise SystemExit(1)
+if not isinstance(s.get('cycle'), int) or s.get('cycle', 0) < 1:
+    raise SystemExit(1)
+print(json.dumps({'cycle':s.get('cycle'),'presence':s.get('presence'),'observed':s.get('totalObserved'),'replies':s.get('totalReplies'),'watchRooms':s.get('watchRooms')}, ensure_ascii=False))
 PY
   then
     OK=1
@@ -105,8 +119,8 @@ PY
 done
 
 if [ "$OK" -ne 1 ]; then
-  echo "BŁĄD: workflow wystartował, ale nie potwierdził statusu w Technocore."
-  "${VC[@]}" logs "$URL" --level error --since 10m || true
+  echo "BŁĄD: workflow wystartował, ale nie potwierdził świeżego statusu w Technocore."
+  "${VC[@]}" logs "$URL" --level error --since 10m --expand --limit 20 || true
   exit 5
 fi
 
