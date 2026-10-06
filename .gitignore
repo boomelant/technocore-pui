@@ -10,3 +10,7 @@ data/
 *.pem
 *.seed
 secrets/
+
+node_modules/
+.next/
+.vercel/
