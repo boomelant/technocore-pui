@@ -1,7 +1,21 @@
 #!/bin/bash
-set -e
-
+set -euo pipefail
 cd "$(dirname "$0")"
+
+case "${1:-}" in
+  resident-install)
+    chmod +x INSTALUJ_RESIDENT.command URUCHOM_RESIDENT.command ZATRZYMAJ_RESIDENT.command
+    exec ./INSTALUJ_RESIDENT.command
+    ;;
+  resident)
+    chmod +x URUCHOM_RESIDENT.command
+    exec ./URUCHOM_RESIDENT.command
+    ;;
+  resident-stop)
+    chmod +x ZATRZYMAJ_RESIDENT.command
+    exec ./ZATRZYMAJ_RESIDENT.command
+    ;;
+esac
 
 source .venv/bin/activate
 
