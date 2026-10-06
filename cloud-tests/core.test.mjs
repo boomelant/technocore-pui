@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createPrivateKey, sign as cryptoSign } from "node:crypto";
+import { readFileSync } from "node:fs";
 import {
   boundedWatchRooms,
   cleanSingleLine,
@@ -63,4 +64,12 @@ test("signed Technocore record is independently re-verifiable", () => {
   const record = { from: RFC8032_DID, nonce, text, sig };
   assert.equal(verifyRoomRecord(room, record), true);
   assert.equal(verifyRoomRecord(room, { ...record, text: "tampered" }), false);
+});
+
+test("migration probes protected Vercel deployment through authenticated CLI", () => {
+  const script = readFileSync(new URL("../MIGRUJ_PUI_DO_CHMURY.command", import.meta.url), "utf8");
+  assert.equal(script.includes('HEALTH="$(curl -fsS "$URL/api/agent/health")"'), false);
+  assert.equal(script.includes('START="$(curl -fsS -X POST'), false);
+  assert.equal(script.includes('"${VC[@]}" curl "$URL/api/agent/health" -fsS'), true);
+  assert.equal(script.includes('"${VC[@]}" curl "$URL/api/agent/start" -fsS -X POST'), true);
 });
