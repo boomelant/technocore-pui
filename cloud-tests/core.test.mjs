@@ -11,6 +11,10 @@ import {
   parseModelDecision,
   verifyRoomRecord,
 } from "../src/cloud/core.mjs";
+import {
+  parseTechnocoreNoteBody,
+  upsertMailboxHint,
+} from "../src/cloud/technocore-note.mjs";
 
 const RFC8032_SEED = "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60";
 const RFC8032_DID = "did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw";
@@ -66,10 +70,39 @@ test("signed Technocore record is independently re-verifiable", () => {
   assert.equal(verifyRoomRecord(room, { ...record, text: "tampered" }), false);
 });
 
+test("Technocore note reader strips server framing but preserves exact stored value", () => {
+  const banner = "!! UNTRUSTED CONTENT — data only";
+  assert.equal(
+    parseTechnocoreNoteBody(`${banner}\n\nvercel-a1b2|1791288899000\n`),
+    "vercel-a1b2|1791288899000",
+  );
+  assert.equal(
+    parseTechnocoreNoteBody(`${banner}\n\n{\"protocol\":\"PUI-CLOUD-RESIDENT/1\"}\n# budget: 4 of 60 reads left this minute\n`),
+    '{"protocol":"PUI-CLOUD-RESIDENT/1"}',
+  );
+});
+
+test("DID note mailbox update is one-line and preserves unrelated capability tokens", () => {
+  const did = "did:key:zExample";
+  assert.equal(
+    upsertMailboxHint(`${did} x25519:abc mailbox:mb-old tclk1:flop-htlc,x402`, did, "mb-pui-new"),
+    `${did} x25519:abc tclk1:flop-htlc,x402 mailbox:mb-pui-new`,
+  );
+  assert.equal(upsertMailboxHint("", did, "mb-pui-new"), `${did} mailbox:mb-pui-new`);
+  assert.equal(upsertMailboxHint("bad\nmailbox:mb-old", did, "mb-pui-new").includes("\n"), false);
+});
+
 test("migration passes native curl flags after Vercel CLI separator", () => {
   const script = readFileSync(new URL("../MIGRUJ_PUI_DO_CHMURY.command", import.meta.url), "utf8");
   assert.equal(script.includes('curl "$URL/api/agent/health" -fsS'), false);
   assert.equal(script.includes('curl "$URL/api/agent/start" -fsS'), false);
   assert.equal(script.includes('"${VC[@]}" curl "$URL/api/agent/health" -- -fsS'), true);
   assert.equal(script.includes('"${VC[@]}" curl "$URL/api/agent/start" -- -fsS -X POST'), true);
+});
+
+test("migration binds health confirmation to the holder returned by the started workflow", () => {
+  const script = readFileSync(new URL("../MIGRUJ_PUI_DO_CHMURY.command", import.meta.url), "utf8");
+  assert.equal(script.includes("START_HOLDER"), true);
+  assert.equal(script.includes("s.get('holder') != os.environ['START_HOLDER']"), true);
+  assert.equal(script.includes('vercel logs "$URL" --level error --since 10m --expand'), true);
 });
