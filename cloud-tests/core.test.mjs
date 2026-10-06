@@ -66,10 +66,10 @@ test("signed Technocore record is independently re-verifiable", () => {
   assert.equal(verifyRoomRecord(room, { ...record, text: "tampered" }), false);
 });
 
-test("migration probes protected Vercel deployment through authenticated CLI", () => {
+test("migration passes native curl flags after Vercel CLI separator", () => {
   const script = readFileSync(new URL("../MIGRUJ_PUI_DO_CHMURY.command", import.meta.url), "utf8");
-  assert.equal(script.includes('HEALTH="$(curl -fsS "$URL/api/agent/health")"'), false);
-  assert.equal(script.includes('START="$(curl -fsS -X POST'), false);
-  assert.equal(script.includes('"${VC[@]}" curl "$URL/api/agent/health" -fsS'), true);
-  assert.equal(script.includes('"${VC[@]}" curl "$URL/api/agent/start" -fsS -X POST'), true);
+  assert.equal(script.includes('curl "$URL/api/agent/health" -fsS'), false);
+  assert.equal(script.includes('curl "$URL/api/agent/start" -fsS'), false);
+  assert.equal(script.includes('"${VC[@]}" curl "$URL/api/agent/health" -- -fsS'), true);
+  assert.equal(script.includes('"${VC[@]}" curl "$URL/api/agent/start" -- -fsS -X POST'), true);
 });
