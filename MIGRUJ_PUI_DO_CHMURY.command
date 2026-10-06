@@ -60,10 +60,14 @@ if [[ ! "$URL" =~ ^https:// ]]; then
 fi
 
 echo "Deployment: $URL"
+echo "Weryfikacja przez uwierzytelnione 'vercel curl' (działa również przy Deployment Protection)."
 
-HEALTH="$(curl -fsS "$URL/api/agent/health")"
+if ! HEALTH="$("${VC[@]}" curl "$URL/api/agent/health" -fsS)"; then
+  echo "BŁĄD: nie można odczytać /api/agent/health przez Vercel CLI."
+  exit 4
+fi
 HEALTH_JSON="$HEALTH" python3 - <<'PY'
-import json, os, sys
+import json, os
 x=json.loads(os.environ['HEALTH_JSON'])
 if not x.get('identityMatch'):
     raise SystemExit('BŁĄD: cloud PUI_SEED nie odpowiada kanonicznemu DID')
@@ -72,15 +76,20 @@ if not x.get('zeroCostMode') or not x.get('autonomousWrite'):
 print('Cloud identity/config: OK')
 PY
 
-START="$(curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" "$URL/api/agent/start")"
+if ! START="$("${VC[@]}" curl "$URL/api/agent/start" -fsS -X POST -H "Authorization: Bearer $CRON_SECRET")"; then
+  echo "BŁĄD: nie udało się uruchomić workflow przez chroniony deployment."
+  exit 5
+fi
 printf '%s\n' "$START"
 
 OK=0
 for delay in 5 10 20 30; do
   sleep "$delay"
-  HEALTH="$(curl -fsS "$URL/api/agent/health")"
+  if ! HEALTH="$("${VC[@]}" curl "$URL/api/agent/health" -fsS)"; then
+    continue
+  fi
   if HEALTH_JSON="$HEALTH" python3 - <<'PY'
-import json, os, sys
+import json, os
 x=json.loads(os.environ['HEALTH_JSON'])
 s=x.get('residentStatus')
 if not isinstance(s, dict) or s.get('protocol') != 'PUI-CLOUD-RESIDENT/1':
