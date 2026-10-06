@@ -77,8 +77,8 @@ test("Technocore note reader strips server framing but preserves exact stored va
     "vercel-a1b2|1791288899000",
   );
   assert.equal(
-    parseTechnocoreNoteBody(`${banner}\n\n{\"protocol\":\"PUI-CLOUD-RESIDENT/1\"}\n# budget: 4 of 60 reads left this minute\n`),
-    '{"protocol":"PUI-CLOUD-RESIDENT/1"}',
+    parseTechnocoreNoteBody(`${banner}\n\n{\"protocol\":\"PUI-CLOUD-RESIDENT/2\"}\n# budget: 4 of 60 reads left this minute\n`),
+    '{"protocol":"PUI-CLOUD-RESIDENT/2"}',
   );
 });
 
@@ -90,6 +90,12 @@ test("DID note mailbox update is one-line and preserves unrelated capability tok
   );
   assert.equal(upsertMailboxHint("", did, "mb-pui-new"), `${did} mailbox:mb-pui-new`);
   assert.equal(upsertMailboxHint("bad\nmailbox:mb-old", did, "mb-pui-new").includes("\n"), false);
+});
+
+test("health route decodes Technocore note framing before parsing resident JSON", () => {
+  const route = readFileSync(new URL("../app/api/agent/health/route.ts", import.meta.url), "utf8");
+  assert.equal(route.includes("parseTechnocoreNoteBody(await response.text())"), true);
+  assert.equal(route.includes('protocol: "PUI-CLOUD-RESIDENT/2"'), true);
 });
 
 test("migration passes native curl flags after Vercel CLI separator", () => {
@@ -104,5 +110,5 @@ test("migration binds health confirmation to the holder returned by the started 
   const script = readFileSync(new URL("../MIGRUJ_PUI_DO_CHMURY.command", import.meta.url), "utf8");
   assert.equal(script.includes("START_HOLDER"), true);
   assert.equal(script.includes("s.get('holder') != os.environ['START_HOLDER']"), true);
-  assert.equal(script.includes('vercel logs "$URL" --level error --since 10m --expand'), true);
+  assert.equal(script.includes('"${VC[@]}" logs "$URL" --level error --since 10m --expand'), true);
 });
