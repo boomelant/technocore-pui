@@ -1,4 +1,4 @@
-import { sleep } from "workflow/sleep";
+import { sleep } from "workflow";
 import {
   acquireLeaseStep,
   bootstrapIdentityStep,
