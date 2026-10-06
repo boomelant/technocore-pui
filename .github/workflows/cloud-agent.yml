@@ -2,7 +2,7 @@ name: Cloud agent tests
 
 on:
   push:
-    branches: [main, feat/vercel-autonomous-agent]
+    branches: [main, feat/vercel-autonomous-agent, fix/vercel-protected-healthcheck]
   pull_request:
 
 jobs:
@@ -14,6 +14,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
+      - run: bash -n MIGRUJ_PUI_DO_CHMURY.command
       - run: npm install --package-lock=false --no-audit --no-fund
       - run: npm run test:cloud
       - run: npm run build
