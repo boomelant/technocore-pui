@@ -62,7 +62,7 @@ fi
 echo "Deployment: $URL"
 echo "Weryfikacja przez uwierzytelnione 'vercel curl' (działa również przy Deployment Protection)."
 
-if ! HEALTH="$("${VC[@]}" curl "$URL/api/agent/health" -fsS)"; then
+if ! HEALTH="$("${VC[@]}" curl "$URL/api/agent/health" -- -fsS)"; then
   echo "BŁĄD: nie można odczytać /api/agent/health przez Vercel CLI."
   exit 4
 fi
@@ -76,7 +76,7 @@ if not x.get('zeroCostMode') or not x.get('autonomousWrite'):
 print('Cloud identity/config: OK')
 PY
 
-if ! START="$("${VC[@]}" curl "$URL/api/agent/start" -fsS -X POST -H "Authorization: Bearer $CRON_SECRET")"; then
+if ! START="$("${VC[@]}" curl "$URL/api/agent/start" -- -fsS -X POST -H "Authorization: Bearer $CRON_SECRET")"; then
   echo "BŁĄD: nie udało się uruchomić workflow przez chroniony deployment."
   exit 5
 fi
@@ -85,7 +85,7 @@ printf '%s\n' "$START"
 OK=0
 for delay in 5 10 20 30; do
   sleep "$delay"
-  if ! HEALTH="$("${VC[@]}" curl "$URL/api/agent/health" -fsS)"; then
+  if ! HEALTH="$("${VC[@]}" curl "$URL/api/agent/health" -- -fsS)"; then
     continue
   fi
   if HEALTH_JSON="$HEALTH" python3 - <<'PY'
