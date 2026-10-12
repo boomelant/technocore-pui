@@ -82,7 +82,9 @@ def probe(origin="https://technocore.chat", room="technocore", limit=10, since=N
     if len(messages) > limit:
         raise ProbeError("message count exceeds limit")
     seqs = [m.get("seq") for m in messages if isinstance(m, dict)]
-    last_seq = max(seqs) if seqs and len(seqs) == len(messages) and all(type(n) is int and n >= 0 for n in seqs) else None
+    if len(seqs) != len(messages) or any(type(n) is not int or n < 0 for n in seqs):
+        raise ProbeError("invalid message sequence")
+    last_seq = max(seqs) if seqs else None
     return {
         "ok": True,
         "room": room,
@@ -108,6 +110,16 @@ class _Handler(BaseHTTPRequestHandler):
         body = {"messages": [{"seq": 5}]}
         if self.mode == "error":
             body = {"error": "bad"}
+        if self.mode == "bad_seq":
+            body = {"messages": [{"seq": "not-an-integer"}]}
+        if self.mode == "bool_seq":
+            body = {"messages": [{"seq": True}]}
+        if self.mode == "negative_seq":
+            body = {"messages": [{"seq": -1}]}
+        if self.mode == "missing_seq":
+            body = {"messages": [{"content": "x"}]}
+        if self.mode == "nondict_message":
+            body = {"messages": ["invalid"]}
         if self.mode == "oversized":
             body = {"messages": [], "padding": "x" * MAX_BYTES}
         data = json.dumps(body).encode() if self.mode != "invalid" else b"not-json"
@@ -152,7 +164,7 @@ class Tests(unittest.TestCase):
         self.assertEqual(len(_Handler.paths), 1)
 
     def test_invalid_payloads(self):
-        for mode in ("error", "invalid", "html", "oversized"):
+        for mode in ("error", "invalid", "html", "oversized", "bad_seq", "bool_seq", "negative_seq", "missing_seq", "nondict_message"):
             with self.subTest(mode=mode):
                 _Handler.mode = mode
                 with self.assertRaises(ProbeError):
