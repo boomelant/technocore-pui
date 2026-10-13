@@ -31,7 +31,7 @@ jobs:
       EXPECTED_REVISION: active-replies-v1
       EXPECTED_DID: did:key:z6Mkub4QuoxnRWkzjKLmJtcikyoYjVEhrZVtvs2EA3PX1N3f
     steps:
-      - name: Obtain GitHub OIDC token and ensure current PUI resident
+      - name: Ensure current PUI Technocore resident
         run: |
           set -euo pipefail
 
@@ -39,6 +39,83 @@ jobs:
           if ! [[ "$HOLDER" =~ ^[a-z0-9][a-z0-9-]{0,38}$ ]]; then
             echo "generated holder is invalid" >&2
             exit 1
+          fi
+
+          status_ok() {
+            HEALTH_JSON="$1" REQUIRE_HOLDER="$2" HOLDER="$HOLDER" EXPECTED_REVISION="$EXPECTED_REVISION" EXPECTED_DID="$EXPECTED_DID" python3 - <<'PY'
+          import json, os, re
+          from datetime import datetime, timezone
+
+          value = json.loads(os.environ['HEALTH_JSON'])
+          status = value.get('residentStatus')
+          if not isinstance(status, dict):
+              raise SystemExit(1)
+          if status.get('protocol') != 'PUI-CLOUD-RESIDENT/2':
+              raise SystemExit(1)
+          if status.get('did') != os.environ['EXPECTED_DID']:
+              raise SystemExit(1)
+          if status.get('revision') != os.environ['EXPECTED_REVISION']:
+              raise SystemExit(1)
+          holder = status.get('holder')
+          if not isinstance(holder, str) or not re.fullmatch(r'(?:vercel|gh)-[a-z0-9-]{1,32}', holder):
+              raise SystemExit(1)
+          if os.environ['REQUIRE_HOLDER'] == '1' and holder != os.environ['HOLDER']:
+              raise SystemExit(1)
+          if not isinstance(status.get('cycle'), int) or status.get('cycle', 0) < 1:
+              raise SystemExit(1)
+          try:
+              stamp = datetime.fromisoformat(str(status.get('at', '')).replace('Z', '+00:00'))
+              age = datetime.now(timezone.utc).timestamp() - stamp.timestamp()
+          except Exception:
+              raise SystemExit(1)
+          if age < -120 or age > 720:
+              raise SystemExit(1)
+          print(json.dumps({
+              'holder': holder,
+              'revision': status.get('revision'),
+              'cycle': status.get('cycle'),
+              'at': status.get('at'),
+              'presence': status.get('presence'),
+              'observedThisCycle': status.get('observedThisCycle'),
+              'totalObserved': status.get('totalObserved'),
+              'totalReplies': status.get('totalReplies'),
+              'candidate': status.get('candidate'),
+              'replyCandidate': status.get('replyCandidate'),
+              'decision': status.get('decision'),
+          }, ensure_ascii=False))
+          PY
+          }
+
+          health_summary() {
+            HEALTH_JSON="$1" python3 - <<'PY'
+          import json, os
+          try:
+              value = json.loads(os.environ['HEALTH_JSON'])
+              status = value.get('residentStatus') if isinstance(value, dict) else None
+              if not isinstance(status, dict):
+                  print('{"residentStatus":null}')
+              else:
+                  print(json.dumps({
+                      'holder': status.get('holder'),
+                      'revision': status.get('revision'),
+                      'cycle': status.get('cycle'),
+                      'at': status.get('at'),
+                      'totalReplies': status.get('totalReplies'),
+                      'candidate': status.get('candidate'),
+                      'replyCandidate': status.get('replyCandidate'),
+                      'decision': status.get('decision'),
+                  }, ensure_ascii=False))
+          except Exception:
+              print('{"health":"invalid-json"}')
+          PY
+          }
+
+          # Do not rotate a healthy current resident just because this is a new watchdog run.
+          if HEALTH="$(curl -fsS "$HEALTH_URL" 2>/dev/null)"; then
+            echo "preflight health: $(health_summary "$HEALTH")"
+            if status_ok "$HEALTH" 0; then
+              exit 0
+            fi
           fi
 
           OIDC_JSON="$(curl -fsS \
@@ -61,65 +138,21 @@ jobs:
               "$TARGET_URL"
           }
 
-          status_is_current() {
-            HOLDER="$HOLDER" EXPECTED_REVISION="$EXPECTED_REVISION" EXPECTED_DID="$EXPECTED_DID" HEALTH_JSON="$1" python3 - <<'PY'
-          import json, os
-          value = json.loads(os.environ['HEALTH_JSON'])
-          status = value.get('residentStatus')
-          if not isinstance(status, dict):
-              raise SystemExit(1)
-          if status.get('protocol') != 'PUI-CLOUD-RESIDENT/2':
-              raise SystemExit(1)
-          if status.get('did') != os.environ['EXPECTED_DID']:
-              raise SystemExit(1)
-          if status.get('revision') != os.environ['EXPECTED_REVISION']:
-              raise SystemExit(1)
-          if status.get('holder') != os.environ['HOLDER']:
-              raise SystemExit(1)
-          if not isinstance(status.get('cycle'), int) or status.get('cycle', 0) < 1:
-              raise SystemExit(1)
-          print(json.dumps({
-              'holder': status.get('holder'),
-              'revision': status.get('revision'),
-              'cycle': status.get('cycle'),
-              'presence': status.get('presence'),
-              'observedThisCycle': status.get('observedThisCycle'),
-              'totalObserved': status.get('totalObserved'),
-              'totalReplies': status.get('totalReplies'),
-              'candidate': status.get('candidate'),
-              'replyCandidate': status.get('replyCandidate'),
-              'decision': status.get('decision'),
-          }, ensure_ascii=False))
-          PY
-          }
-
-          poll_current() {
-            for delay in 3 6 12 20; do
-              sleep "$delay"
-              if HEALTH="$(curl -fsS "$HEALTH_URL")" && status_is_current "$HEALTH"; then
-                return 0
-              fi
-            done
-            return 1
-          }
-
-          START="$(start_resident)"
-          START_JSON="$START" HOLDER="$HOLDER" python3 - <<'PY'
-          import json, os
-          value = json.loads(os.environ['START_JSON'])
-          if value.get('status') != 'started' or value.get('holder') != os.environ['HOLDER']:
-              raise SystemExit('resident did not start with requested holder')
-          PY
-
-          if poll_current; then
-            exit 0
-          fi
-
-          # A durable workflow can stay pinned to an older deployment. Upgrade it by
-          # atomically transferring only our PUI lease to this run's deterministic holder.
-          # The exact-match CAS prevents blind overwrite if the lease changes concurrently.
+          # A stale durable workflow can keep renewing its old deployment forever.
+          # Read the exact lease and transfer it only with compare-and-swap. Missing lease
+          # is safe: the new resident will claim it through its normal if_absent path.
           for attempt in 1 2 3; do
-            RAW_LEASE="$(curl -fsS "$LEASE_URL")"
+            LEASE_CODE="$(curl -sS -o /tmp/pui-lease-read -w '%{http_code}' "$LEASE_URL")"
+            if [ "$LEASE_CODE" = "404" ]; then
+              echo 'resident lease is absent; new resident will claim it'
+              break
+            fi
+            if [ "$LEASE_CODE" != "200" ]; then
+              echo "lease read failed with HTTP ${LEASE_CODE}" >&2
+              exit 1
+            fi
+
+            RAW_LEASE="$(cat /tmp/pui-lease-read)"
             CURRENT="$(RAW_LEASE="$RAW_LEASE" python3 - <<'PY'
           import os, re
           raw = os.environ['RAW_LEASE']
@@ -143,15 +176,16 @@ jobs:
           PY
           )"
 
-            HTTP_CODE="$(curl -sS -o /tmp/pui-lease-body -w '%{http_code}' \
+            HTTP_CODE="$(curl -sS -o /tmp/pui-lease-write -w '%{http_code}' \
               -X POST -H 'Content-Type: application/json' \
               --data "$BODY" "$LEASE_URL")"
             if [ "$HTTP_CODE" = "200" ]; then
+              echo "lease CAS transferred to ${HOLDER}"
               break
             fi
             if [ "$HTTP_CODE" != "409" ]; then
               echo "lease CAS failed with HTTP ${HTTP_CODE}" >&2
-              cat /tmp/pui-lease-body >&2 || true
+              cat /tmp/pui-lease-write >&2 || true
               exit 1
             fi
             if [ "$attempt" = "3" ]; then
@@ -169,9 +203,15 @@ jobs:
               raise SystemExit('upgraded resident did not start with preclaimed holder')
           PY
 
-          if poll_current; then
-            exit 0
-          fi
+          for delay in 3 6 12 20 40 60; do
+            sleep "$delay"
+            if HEALTH="$(curl -fsS "$HEALTH_URL" 2>/dev/null)"; then
+              echo "takeover health: $(health_summary "$HEALTH")"
+              if status_ok "$HEALTH" 1; then
+                exit 0
+              fi
+            fi
+          done
 
-          echo 'current PUI resident revision did not publish a healthy Technocore status' >&2
+          echo 'current PUI resident revision did not publish a healthy Technocore status after takeover' >&2
           exit 1
