@@ -8,6 +8,9 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/technocore-activity.yml'
+      - 'app/api/agent/start/route.ts'
+      - 'src/cloud/participation.mjs'
+      - 'workflows/steps/pui-cycle-v2.ts'
 
 permissions:
   contents: read
@@ -20,14 +23,24 @@ concurrency:
 jobs:
   trigger:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
+    env:
+      TARGET_URL: https://technocore-pui.vercel.app/api/agent/start
+      HEALTH_URL: https://technocore-pui.vercel.app/api/agent/health
+      LEASE_URL: https://technocore.chat/kv/pui-cloud/resident-lease
+      EXPECTED_REVISION: active-replies-v1
+      EXPECTED_DID: did:key:z6Mkub4QuoxnRWkzjKLmJtcikyoYjVEhrZVtvs2EA3PX1N3f
     steps:
-      - name: Obtain GitHub OIDC token and start PUI resident
-        env:
-          TARGET_URL: https://technocore-pui.vercel.app/api/agent/start
-          HEALTH_URL: https://technocore-pui.vercel.app/api/agent/health
+      - name: Obtain GitHub OIDC token and ensure current PUI resident
         run: |
           set -euo pipefail
+
+          HOLDER="gh-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          if ! [[ "$HOLDER" =~ ^[a-z0-9][a-z0-9-]{0,38}$ ]]; then
+            echo "generated holder is invalid" >&2
+            exit 1
+          fi
+
           OIDC_JSON="$(curl -fsS \
             -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
             "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=technocore-pui")"
@@ -41,51 +54,124 @@ jobs:
           PY
           )"
 
-          START="$(curl -fsS -X POST \
-            -H "Authorization: Bearer ${TOKEN}" \
-            "$TARGET_URL")"
-          HOLDER="$(START_JSON="$START" python3 - <<'PY'
-          import json, os
-          value = json.loads(os.environ['START_JSON'])
-          if value.get('status') != 'started' or not value.get('holder'):
-              raise SystemExit('resident did not start')
-          print(value['holder'])
-          PY
-          )"
+          start_resident() {
+            curl -fsS -X POST \
+              -H "Authorization: Bearer ${TOKEN}" \
+              -H "x-pui-holder: ${HOLDER}" \
+              "$TARGET_URL"
+          }
 
-          for delay in 5 10 20 30; do
-            sleep "$delay"
-            if HEALTH="$(curl -fsS "$HEALTH_URL")"; then
-              if HOLDER="$HOLDER" HEALTH_JSON="$HEALTH" python3 - <<'PY'
+          status_is_current() {
+            HOLDER="$HOLDER" EXPECTED_REVISION="$EXPECTED_REVISION" EXPECTED_DID="$EXPECTED_DID" HEALTH_JSON="$1" python3 - <<'PY'
           import json, os
           value = json.loads(os.environ['HEALTH_JSON'])
           status = value.get('residentStatus')
           if not isinstance(status, dict):
               raise SystemExit(1)
-          if status.get('holder') != os.environ['HOLDER']:
-              # Another healthy resident may already own the lease; accept it only if it is fresh and active.
-              if not isinstance(status.get('cycle'), int) or status.get('cycle', 0) < 1:
-                  raise SystemExit(1)
           if status.get('protocol') != 'PUI-CLOUD-RESIDENT/2':
               raise SystemExit(1)
-          if status.get('did') != 'did:key:z6Mkub4QuoxnRWkzjKLmJtcikyoYjVEhrZVtvs2EA3PX1N3f':
+          if status.get('did') != os.environ['EXPECTED_DID']:
+              raise SystemExit(1)
+          if status.get('revision') != os.environ['EXPECTED_REVISION']:
+              raise SystemExit(1)
+          if status.get('holder') != os.environ['HOLDER']:
+              raise SystemExit(1)
+          if not isinstance(status.get('cycle'), int) or status.get('cycle', 0) < 1:
               raise SystemExit(1)
           print(json.dumps({
               'holder': status.get('holder'),
+              'revision': status.get('revision'),
               'cycle': status.get('cycle'),
               'presence': status.get('presence'),
               'observedThisCycle': status.get('observedThisCycle'),
               'totalObserved': status.get('totalObserved'),
               'totalReplies': status.get('totalReplies'),
               'candidate': status.get('candidate'),
+              'replyCandidate': status.get('replyCandidate'),
               'decision': status.get('decision'),
           }, ensure_ascii=False))
           PY
-              then
-                exit 0
+          }
+
+          poll_current() {
+            for delay in 3 6 12 20; do
+              sleep "$delay"
+              if HEALTH="$(curl -fsS "$HEALTH_URL")" && status_is_current "$HEALTH"; then
+                return 0
               fi
+            done
+            return 1
+          }
+
+          START="$(start_resident)"
+          START_JSON="$START" HOLDER="$HOLDER" python3 - <<'PY'
+          import json, os
+          value = json.loads(os.environ['START_JSON'])
+          if value.get('status') != 'started' or value.get('holder') != os.environ['HOLDER']:
+              raise SystemExit('resident did not start with requested holder')
+          PY
+
+          if poll_current; then
+            exit 0
+          fi
+
+          # A durable workflow can stay pinned to an older deployment. Upgrade it by
+          # atomically transferring only our PUI lease to this run's deterministic holder.
+          # The exact-match CAS prevents blind overwrite if the lease changes concurrently.
+          for attempt in 1 2 3; do
+            RAW_LEASE="$(curl -fsS "$LEASE_URL")"
+            CURRENT="$(RAW_LEASE="$RAW_LEASE" python3 - <<'PY'
+          import os, re
+          raw = os.environ['RAW_LEASE']
+          start = raw.find('\n\n')
+          value = raw if start < 0 else raw[start + 2:]
+          footer = value.rfind('\n# budget: ')
+          if footer >= 0:
+              value = value[:footer]
+          value = value.rstrip()
+          if not re.fullmatch(r'(?:vercel|gh)-[a-z0-9-]{1,32}\|\d{10,16}', value):
+              raise SystemExit('refusing to take over malformed or foreign lease')
+          print(value)
+          PY
+          )"
+
+            EXPIRY_MS="$(( $(date +%s) * 1000 + 900000 ))"
+            NEW_LEASE="${HOLDER}|${EXPIRY_MS}"
+            BODY="$(CURRENT="$CURRENT" NEW_LEASE="$NEW_LEASE" python3 - <<'PY'
+          import json, os
+          print(json.dumps({'value': os.environ['NEW_LEASE'], 'if': os.environ['CURRENT']}, separators=(',', ':')))
+          PY
+          )"
+
+            HTTP_CODE="$(curl -sS -o /tmp/pui-lease-body -w '%{http_code}' \
+              -X POST -H 'Content-Type: application/json' \
+              --data "$BODY" "$LEASE_URL")"
+            if [ "$HTTP_CODE" = "200" ]; then
+              break
             fi
+            if [ "$HTTP_CODE" != "409" ]; then
+              echo "lease CAS failed with HTTP ${HTTP_CODE}" >&2
+              cat /tmp/pui-lease-body >&2 || true
+              exit 1
+            fi
+            if [ "$attempt" = "3" ]; then
+              echo 'lease CAS lost three consecutive races' >&2
+              exit 1
+            fi
+            sleep 2
           done
 
-          echo 'PUI resident did not publish a healthy Technocore status' >&2
+          START="$(start_resident)"
+          START_JSON="$START" HOLDER="$HOLDER" python3 - <<'PY'
+          import json, os
+          value = json.loads(os.environ['START_JSON'])
+          if value.get('status') != 'started' or value.get('holder') != os.environ['HOLDER']:
+              raise SystemExit('upgraded resident did not start with preclaimed holder')
+          PY
+
+          if poll_current; then
+            exit 0
+          fi
+
+          echo 'current PUI resident revision did not publish a healthy Technocore status' >&2
           exit 1
