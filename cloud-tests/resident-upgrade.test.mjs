@@ -28,12 +28,22 @@ test("watchdog upgrades stale resident only through exact-match CAS", () => {
   assert.equal(workflow.includes("refusing to take over malformed or foreign lease"), true);
 });
 
-test("watchdog requires exact holder, revision, DID and protocol after takeover", () => {
+test("watchdog preserves a healthy current revision instead of rotating every two hours", () => {
+  const workflow = readFileSync(new URL("../.github/workflows/technocore-activity.yml", import.meta.url), "utf8");
+  assert.equal(workflow.includes("Do not rotate a healthy current resident"), true);
+  assert.equal(workflow.includes('if status_ok "$HEALTH" 0; then'), true);
+  assert.equal(workflow.includes("if age < -120 or age > 720"), true);
+});
+
+test("watchdog requires exact holder only after takeover and emits bounded diagnostics", () => {
   const workflow = readFileSync(new URL("../.github/workflows/technocore-activity.yml", import.meta.url), "utf8");
   for (const needle of [
     "status.get('protocol') != 'PUI-CLOUD-RESIDENT/2'",
     "status.get('did') != os.environ['EXPECTED_DID']",
     "status.get('revision') != os.environ['EXPECTED_REVISION']",
-    "status.get('holder') != os.environ['HOLDER']",
+    "os.environ['REQUIRE_HOLDER'] == '1' and holder != os.environ['HOLDER']",
+    'if status_ok "$HEALTH" 1; then',
+    "'replyCandidate': status.get('replyCandidate')",
+    "'decision': status.get('decision')",
   ]) assert.equal(workflow.includes(needle), true, needle);
 });
