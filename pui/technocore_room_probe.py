@@ -84,7 +84,11 @@ def probe(origin="https://technocore.chat", room="technocore", limit=10, since=N
     seqs = [m.get("seq") for m in messages if isinstance(m, dict)]
     if len(seqs) != len(messages) or any(type(n) is not int or n < 0 for n in seqs):
         raise ProbeError("invalid message sequence")
-    last_seq = max(seqs) if seqs else None
+    # The API promises oldest-first messages and since is an exclusive cursor.
+    # Refuse replay/duplicates/reordering rather than reporting a misleading cursor.
+    if any(a >= b for a, b in zip(seqs, seqs[1:])) or (since is not None and any(n <= since for n in seqs)):
+        raise ProbeError("invalid message sequence")
+    last_seq = seqs[-1] if seqs else None
     return {
         "ok": True,
         "room": room,
@@ -120,6 +124,12 @@ class _Handler(BaseHTTPRequestHandler):
             body = {"messages": [{"content": "x"}]}
         if self.mode == "nondict_message":
             body = {"messages": ["invalid"]}
+        if self.mode == "stale_cursor":
+            body = {"messages": [{"seq": 4}]}
+        if self.mode == "duplicate_seq":
+            body = {"messages": [{"seq": 5}, {"seq": 5}]}
+        if self.mode == "reordered_seq":
+            body = {"messages": [{"seq": 6}, {"seq": 5}]}
         if self.mode == "oversized":
             body = {"messages": [], "padding": "x" * MAX_BYTES}
         data = json.dumps(body).encode() if self.mode != "invalid" else b"not-json"
@@ -169,6 +179,13 @@ class Tests(unittest.TestCase):
                 _Handler.mode = mode
                 with self.assertRaises(ProbeError):
                     probe(self.origin)
+
+    def test_cursor_replay_fails_closed(self):
+        for mode in ("stale_cursor", "duplicate_seq", "reordered_seq"):
+            with self.subTest(mode=mode):
+                _Handler.mode = mode
+                with self.assertRaisesRegex(ProbeError, "invalid message sequence"):
+                    probe(self.origin, since=4)
 
     def test_invalid_names(self):
         for name in ("", "Technocore", "_bad", "../private", "x" * 49):
