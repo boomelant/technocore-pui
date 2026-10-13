@@ -1,0 +1,91 @@
+name: Technocore activity watchdog
+
+on:
+  schedule:
+    - cron: '17 */2 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/technocore-activity.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: technocore-activity-watchdog
+  cancel-in-progress: false
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Obtain GitHub OIDC token and start PUI resident
+        env:
+          TARGET_URL: https://technocore-pui.vercel.app/api/agent/start
+          HEALTH_URL: https://technocore-pui.vercel.app/api/agent/health
+        run: |
+          set -euo pipefail
+          OIDC_JSON="$(curl -fsS \
+            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=technocore-pui")"
+          TOKEN="$(OIDC_JSON="$OIDC_JSON" python3 - <<'PY'
+          import json, os
+          value = json.loads(os.environ['OIDC_JSON'])
+          token = value.get('value')
+          if not isinstance(token, str) or not token:
+              raise SystemExit('missing GitHub OIDC token')
+          print(token)
+          PY
+          )"
+
+          START="$(curl -fsS -X POST \
+            -H "Authorization: Bearer ${TOKEN}" \
+            "$TARGET_URL")"
+          HOLDER="$(START_JSON="$START" python3 - <<'PY'
+          import json, os
+          value = json.loads(os.environ['START_JSON'])
+          if value.get('status') != 'started' or not value.get('holder'):
+              raise SystemExit('resident did not start')
+          print(value['holder'])
+          PY
+          )"
+
+          for delay in 5 10 20 30; do
+            sleep "$delay"
+            if HEALTH="$(curl -fsS "$HEALTH_URL")"; then
+              if HOLDER="$HOLDER" HEALTH_JSON="$HEALTH" python3 - <<'PY'
+          import json, os
+          value = json.loads(os.environ['HEALTH_JSON'])
+          status = value.get('residentStatus')
+          if not isinstance(status, dict):
+              raise SystemExit(1)
+          if status.get('holder') != os.environ['HOLDER']:
+              # Another healthy resident may already own the lease; accept it only if it is fresh and active.
+              if not isinstance(status.get('cycle'), int) or status.get('cycle', 0) < 1:
+                  raise SystemExit(1)
+          if status.get('protocol') != 'PUI-CLOUD-RESIDENT/2':
+              raise SystemExit(1)
+          if status.get('did') != 'did:key:z6Mkub4QuoxnRWkzjKLmJtcikyoYjVEhrZVtvs2EA3PX1N3f':
+              raise SystemExit(1)
+          print(json.dumps({
+              'holder': status.get('holder'),
+              'cycle': status.get('cycle'),
+              'presence': status.get('presence'),
+              'observedThisCycle': status.get('observedThisCycle'),
+              'totalObserved': status.get('totalObserved'),
+              'totalReplies': status.get('totalReplies'),
+              'candidate': status.get('candidate'),
+              'decision': status.get('decision'),
+          }, ensure_ascii=False))
+          PY
+              then
+                exit 0
+              fi
+            fi
+          done
+
+          echo 'PUI resident did not publish a healthy Technocore status' >&2
+          exit 1
