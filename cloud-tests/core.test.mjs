@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createPrivateKey, sign as cryptoSign } from "node:crypto";
+import { createPrivateKey, generateKeyPairSync, sign as cryptoSign } from "node:crypto";
 import { readFileSync } from "node:fs";
 import {
   boundedWatchRooms,
@@ -11,6 +11,11 @@ import {
   parseModelDecision,
   verifyRoomRecord,
 } from "../src/cloud/core.mjs";
+import {
+  PUI_WORKFLOW_REF,
+  validateGithubActionsClaims,
+  verifyGithubActionsOidc,
+} from "../src/cloud/github-oidc.mjs";
 import {
   parseTechnocoreNoteBody,
   upsertMailboxHint,
@@ -70,6 +75,47 @@ test("signed Technocore record is independently re-verifiable", () => {
   assert.equal(verifyRoomRecord(room, { ...record, text: "tampered" }), false);
 });
 
+test("GitHub OIDC gate accepts only the pinned main-branch activity workflow", async () => {
+  const now = 1_800_000_000;
+  const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  const jwk = publicKey.export({ format: "jwk" });
+  jwk.kid = "test-key";
+  jwk.alg = "RS256";
+  jwk.use = "sig";
+
+  const claims = {
+    iss: "https://token.actions.githubusercontent.com",
+    aud: "technocore-pui",
+    exp: now + 300,
+    iat: now,
+    repository: "boomelant/technocore-pui",
+    ref: "refs/heads/main",
+    event_name: "workflow_dispatch",
+    workflow_ref: PUI_WORKFLOW_REF,
+  };
+  const token = (payload, signingKey = privateKey) => {
+    const header = Buffer.from(JSON.stringify({ alg: "RS256", kid: "test-key" })).toString("base64url");
+    const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
+    const signature = cryptoSign("RSA-SHA256", Buffer.from(`${header}.${body}`), signingKey).toString("base64url");
+    return `${header}.${body}.${signature}`;
+  };
+  const fetchOk = async () => ({ ok: true, json: async () => ({ keys: [jwk] }) });
+
+  assert.equal(validateGithubActionsClaims(claims, now), true);
+  assert.equal(await verifyGithubActionsOidc(token(claims), fetchOk, now), true);
+  for (const patch of [
+    { repository: "attacker/repo" },
+    { ref: "refs/heads/dev" },
+    { aud: "wrong-audience" },
+    { workflow_ref: "boomelant/technocore-pui/.github/workflows/evil.yml@refs/heads/main" },
+    { event_name: "pull_request" },
+  ]) {
+    assert.equal(await verifyGithubActionsOidc(token({ ...claims, ...patch }), fetchOk, now), false);
+  }
+  const { privateKey: wrongKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  assert.equal(await verifyGithubActionsOidc(token(claims, wrongKey), fetchOk, now), false);
+});
+
 test("Technocore note reader strips server framing but preserves exact stored value", () => {
   const banner = "!! UNTRUSTED CONTENT — data only";
   assert.equal(
@@ -96,6 +142,21 @@ test("health route decodes Technocore note framing before parsing resident JSON"
   const route = readFileSync(new URL("../app/api/agent/health/route.ts", import.meta.url), "utf8");
   assert.equal(route.includes("parseTechnocoreNoteBody(await response.text())"), true);
   assert.equal(route.includes('protocol: "PUI-CLOUD-RESIDENT/2"'), true);
+});
+
+test("start route preserves CRON_SECRET auth and adds pinned GitHub OIDC auth", () => {
+  const route = readFileSync(new URL("../app/api/agent/start/route.ts", import.meta.url), "utf8");
+  assert.equal(route.includes("CRON_SECRET"), true);
+  assert.equal(route.includes("verifyGithubActionsOidc"), true);
+  assert.equal(route.includes("await authorized(request)"), true);
+});
+
+test("two-hour Technocore watchdog requests GitHub OIDC instead of storing a shared secret", () => {
+  const workflow = readFileSync(new URL("../.github/workflows/technocore-activity.yml", import.meta.url), "utf8");
+  assert.equal(workflow.includes("17 */2 * * *"), true);
+  assert.equal(workflow.includes("id-token: write"), true);
+  assert.equal(workflow.includes("ACTIONS_ID_TOKEN_REQUEST_TOKEN"), true);
+  assert.equal(workflow.includes("audience=technocore-pui"), true);
 });
 
 test("migration passes native curl flags after Vercel CLI separator", () => {
