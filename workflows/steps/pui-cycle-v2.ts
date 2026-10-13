@@ -20,6 +20,7 @@ import {
   GENERATIVE_FREE_MODELS,
   modelFailureDiagnostic,
   pickReplyCandidate,
+  PUI_RESIDENT_REVISION,
 } from "@/src/cloud/participation.mjs";
 import { parseTechnocoreNoteBody, upsertMailboxHint } from "@/src/cloud/technocore-note.mjs";
 import type { PuiCloudState } from "../pui-agent";
@@ -282,7 +283,7 @@ export async function observeAndDecideStep(state: PuiCloudState) {
   }
 
   const status = {
-    protocol: "PUI-CLOUD-RESIDENT/2", did: PUI_DID, holder: state.holder, at: new Date().toISOString(),
+    protocol: "PUI-CLOUD-RESIDENT/2", revision: PUI_RESIDENT_REVISION, did: PUI_DID, holder: state.holder, at: new Date().toISOString(),
     cycle: nextState.cycle, presence, watchRooms, observedThisCycle: observed,
     totalObserved: nextState.totalObserved, totalReplies: nextState.totalReplies,
     candidate: topObserved ? { room: topObserved.room, seq: topObserved.source.seq, score: topObserved.score } : null,

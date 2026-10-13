@@ -2,6 +2,8 @@ import { start } from "workflow/api";
 import { puiAgentWorkflow } from "@/workflows/pui-agent";
 import { verifyGithubActionsOidc } from "@/src/cloud/github-oidc.mjs";
 
+const HOLDER = /^[a-z0-9][a-z0-9-]{0,38}$/;
+
 async function authorized(request: Request) {
   const auth = request.headers.get("authorization") ?? "";
   const secret = process.env.CRON_SECRET;
@@ -21,7 +23,12 @@ async function launch(request: Request) {
   if (!process.env.PUI_SEED) {
     return Response.json({ error: "PUI_SEED missing" }, { status: 503 });
   }
-  const holder = `vercel-${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
+
+  const requestedHolder = request.headers.get("x-pui-holder")?.trim() ?? "";
+  if (requestedHolder && !HOLDER.test(requestedHolder)) {
+    return Response.json({ error: "invalid holder" }, { status: 400 });
+  }
+  const holder = requestedHolder || `vercel-${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
   const run = await start(puiAgentWorkflow, [holder]);
   return Response.json({ status: "started", runId: run.runId, holder });
 }

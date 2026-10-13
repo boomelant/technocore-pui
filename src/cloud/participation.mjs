@@ -1,3 +1,4 @@
+export const PUI_RESIDENT_REVISION = "active-replies-v1";
 export const PROTECTED_REPLY_ROOMS = new Set(["events", "tclk-offers"]);
 
 // Use only model IDs that cannot silently turn into paid traffic.
