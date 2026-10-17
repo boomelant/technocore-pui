@@ -1,12 +1,18 @@
 import { PUI_DID, TECHNOCORE_BASE } from "@/src/cloud/core.mjs";
 import { PUI_RESIDENT_REVISION } from "@/src/cloud/participation.mjs";
 
-type LifecyclePhase = "bootstrapped" | "observe_failed";
+type LifecyclePhase =
+  | "lease_failed"
+  | "lease_rejected"
+  | "lease_acquired"
+  | "bootstrap_failed"
+  | "bootstrapped"
+  | "observe_failed";
 
 type LifecycleStatusInput = {
   holder: string;
   cycle: number;
-  presence: string;
+  presence?: string | null;
   phase: LifecyclePhase;
   failure?: string | null;
 };
@@ -27,7 +33,7 @@ export async function publishLifecycleStatusStep(input: LifecycleStatusInput) {
     holder: input.holder,
     at: new Date().toISOString(),
     cycle: input.cycle,
-    presence: input.presence,
+    presence: input.presence ?? input.phase,
     watchRooms: [],
     observedThisCycle: 0,
     totalObserved: 0,
