@@ -34,7 +34,8 @@ const LEASE_NS = "pui-cloud";
 const LEASE_KEY = "resident-lease";
 const LEASE_TTL_MS = 15 * 60 * 1000;
 const ROOM_COOLDOWN_MS = 30 * 60 * 1000;
-const MAX_MESSAGES_PER_ROOM = 100;
+const MAX_MESSAGES_PER_ROOM = 50;
+const MAX_WATCH_ROOMS = 6;
 const OFFICIAL_SOURCES = [
   "https://flop.finance/testnet/",
   "https://flop.finance/teaser/",
@@ -88,11 +89,24 @@ function encodeLease(holder: string, expiresAt: number) {
   return `${holder}|${Math.floor(expiresAt)}`;
 }
 
+function validateMessageBatch(room: string, messages: Message[], since?: number | null) {
+  let previousSeq = typeof since === "number" ? since : 0;
+  for (const message of messages) {
+    if (!Number.isSafeInteger(message.seq) || Number(message.seq) <= previousSeq) {
+      throw new Error(`invalid or non-monotonic seq in ${room}`);
+    }
+    previousSeq = Number(message.seq);
+  }
+  return messages;
+}
+
 async function readRoom(room: string, since?: number | null, limit = MAX_MESSAGES_PER_ROOM): Promise<Message[]> {
-  const params = new URLSearchParams({ format: "json", limit: String(limit) });
+  const boundedLimit = Math.max(1, Math.min(MAX_MESSAGES_PER_ROOM, Math.floor(limit)));
+  const params = new URLSearchParams({ format: "json", limit: String(boundedLimit) });
   if (typeof since === "number") params.set("since", String(since));
   const value = await fetchJson(`${TECHNOCORE_BASE}/r/${encodeURIComponent(room)}?${params}`);
-  return Array.isArray(value?.messages) ? value.messages : [];
+  const messages = Array.isArray(value?.messages) ? value.messages : [];
+  return validateMessageBatch(room, messages, since);
 }
 
 async function listRooms(): Promise<string[]> {
@@ -116,18 +130,29 @@ async function postSigned(room: string, text: string, nonce: string) {
 }
 
 async function ensurePresence(mailbox: string, previousNonce: string) {
-  const messages = await readRoom(mailbox, null, 200).catch((): Message[] => []);
-  const existing = messages.find((m) => m.from === PUI_DID && String(m.text ?? "").startsWith("PUI cloud resident online"));
+  const messages = await readRoom(mailbox, null, MAX_MESSAGES_PER_ROOM).catch((): Message[] => []);
+  const existing = messages.find((m) =>
+    m.from === PUI_DID &&
+    String(m.text ?? "").startsWith("PUI cloud resident online") &&
+    verifyRoomRecord(mailbox, m)
+  );
   if (existing?.nonce) return { nonce: String(existing.nonce), presence: "already_present" };
   if (process.env.PUI_AUTONOMOUS_WRITE !== "1") return { nonce: previousNonce, presence: "disabled" };
 
+  const beforeSeq = messages.reduce((max, message) => Number.isSafeInteger(message.seq) ? Math.max(max, Number(message.seq)) : max, 0);
   const nonce = nextNonce(previousNonce) as string;
   const text = "PUI cloud resident online | autonomous FLOP technical agent | signed mailbox ready";
   try {
     const posted = await postSigned(mailbox, text, nonce);
     if (!posted.ok) return { nonce, presence: `deferred_http_${posted.status}` };
-    const after = await readRoom(mailbox, null, 200).catch((): Message[] => []);
-    const confirmed = after.some((m) => m.from === PUI_DID && String(m.nonce) === nonce && m.sig === posted.payload.sig && m.text === posted.payload.text);
+    const after = await readRoom(mailbox, beforeSeq, MAX_MESSAGES_PER_ROOM).catch((): Message[] => []);
+    const confirmed = after.some((m) =>
+      m.from === PUI_DID &&
+      String(m.nonce) === nonce &&
+      m.sig === posted.payload.sig &&
+      m.text === posted.payload.text &&
+      verifyRoomRecord(mailbox, m)
+    );
     return { nonce, presence: confirmed ? "confirmed" : "unconfirmed" };
   } catch (error: any) {
     return { nonce, presence: `deferred_${String(error?.name ?? "error").slice(0, 40)}` };
@@ -219,7 +244,7 @@ export async function observeAndDecideStep(state: PuiCloudState) {
   "use step";
   const now = Date.now();
   const available = await listRooms();
-  const events = await readRoom("events", state.eventCursor, 200);
+  const events = await readRoom("events", state.eventCursor, MAX_MESSAGES_PER_ROOM);
   let eventCursor = state.eventCursor;
   const discovered = [...state.dynamicRooms];
   for (const message of events) {
@@ -240,7 +265,7 @@ export async function observeAndDecideStep(state: PuiCloudState) {
   }
 
   const defaults: string[] = Array.isArray(DEFAULT_ROOMS) ? [...DEFAULT_ROOMS] : [];
-  const watchRooms = boundedWatchRooms([...defaults, state.mailbox], discovered, [...available, state.mailbox], 18) as string[];
+  const watchRooms = boundedWatchRooms([...defaults, state.mailbox], discovered, [...available, state.mailbox], MAX_WATCH_ROOMS) as string[];
   const roomCursors = { ...state.roomCursors };
   const candidates: Candidate[] = [];
   let observed = 0;
@@ -271,7 +296,7 @@ export async function observeAndDecideStep(state: PuiCloudState) {
   const replyCandidate = pickReplyCandidate(candidates, state.cooldowns, now) as Candidate | null;
   let action: ReplyAction | null = null; let modelDecision: ModelDecision | null = null;
   if (replyCandidate) {
-    const context = await readRoom(replyCandidate.room, null, 30).catch((): Message[] => []);
+    const context = await readRoom(replyCandidate.room, Math.max(0, Number(replyCandidate.source.seq ?? 1) - 30), 30).catch((): Message[] => []);
     modelDecision = await freeModelDecision(replyCandidate, context);
     const gated = safeAutonomousReply({ room: replyCandidate.room, source: replyCandidate.source, decision: modelDecision }) as { ok: boolean; reply?: string };
     if (gated.ok && gated.reply && process.env.PUI_AUTONOMOUS_WRITE === "1" && typeof replyCandidate.source.seq === "number") {
@@ -303,21 +328,35 @@ export async function observeAndDecideStep(state: PuiCloudState) {
 export async function postReplyStep(action: ReplyAction) {
   "use step";
   if (process.env.PUI_AUTONOMOUS_WRITE !== "1") return { status: "write_disabled" };
-  const fresh = await readRoom(action.room, null, 200);
+  const sourceSince = Math.max(0, action.sourceSeq - 1);
+  const fresh = await readRoom(action.room, sourceSince, MAX_MESSAGES_PER_ROOM);
   const source = fresh.find((m) => m.seq === action.sourceSeq);
   if (!source || source.from !== action.sourceFrom || source.sig !== action.sourceSig || String(source.text ?? "") !== action.sourceText) return { status: "source_changed_fail_closed" };
   if (!verifyRoomRecord(action.room, source)) return { status: "source_signature_invalid" };
   const seed = process.env.PUI_SEED;
   if (!seed) throw new Error("PUI_SEED missing");
   const envelope = signRoomEnvelope(action.room, action.reply, action.nonce, seed);
-  const already = fresh.find((m) => m.from === PUI_DID && String(m.nonce) === action.nonce && m.sig === envelope.sig && m.text === envelope.text);
+  const already = fresh.find((m) =>
+    m.from === PUI_DID &&
+    String(m.nonce) === action.nonce &&
+    m.sig === envelope.sig &&
+    m.text === envelope.text &&
+    verifyRoomRecord(action.room, m)
+  );
   if (already) return { status: "already_posted", seq: already.seq };
   const response = await fetch(`${TECHNOCORE_BASE}/r/${encodeURIComponent(action.room)}`, {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(envelope), cache: "no-store",
   });
   const responseBody = await response.text();
-  const after = await readRoom(action.room, null, 200);
-  const confirmed = after.find((m) => m.from === PUI_DID && String(m.nonce) === action.nonce && m.sig === envelope.sig && m.text === envelope.text);
+  if (!response.ok) return { status: `http_${response.status}`, httpStatus: response.status, body: responseBody.slice(0, 200) };
+  const after = await readRoom(action.room, action.sourceSeq, MAX_MESSAGES_PER_ROOM);
+  const confirmed = after.find((m) =>
+    m.from === PUI_DID &&
+    String(m.nonce) === action.nonce &&
+    m.sig === envelope.sig &&
+    m.text === envelope.text &&
+    verifyRoomRecord(action.room, m)
+  );
   if (confirmed) return { status: "confirmed", seq: confirmed.seq, httpStatus: response.status };
   return { status: "unconfirmed", httpStatus: response.status, body: responseBody.slice(0, 200) };
 }
