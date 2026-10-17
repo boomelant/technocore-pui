@@ -1,10 +1,10 @@
 import { sleep } from "workflow";
 import {
-  acquireLeaseStep,
   bootstrapIdentityStep,
   observeAndDecideStep,
   postReplyStep,
 } from "./steps/pui-cycle-v2";
+import { acquireLeaseStep } from "./steps/resident-lease";
 import { publishLifecycleStatusStep } from "./steps/resident-status";
 
 export type PuiCloudState = {
