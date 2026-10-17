@@ -9,8 +9,8 @@ import {
 export const PUI_DID = "did:key:z6Mkub4QuoxnRWkzjKLmJtcikyoYjVEhrZVtvs2EA3PX1N3f";
 export const TECHNOCORE_BASE = "https://technocore.chat";
 export const FREE_MODELS = [
-  "inclusionai/ling-3.1-flash-free",
-  "convaiinnovations/laya-free",
+  "inclusionai/ling-3.0-tiny-free",
+  "poolside/laguna-s-2.1-free",
 ];
 export const DEFAULT_ROOMS = [
   "lobby",
