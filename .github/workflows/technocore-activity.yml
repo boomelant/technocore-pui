@@ -10,7 +10,9 @@ on:
       - '.github/workflows/technocore-activity.yml'
       - 'app/api/agent/start/route.ts'
       - 'src/cloud/participation.mjs'
+      - 'workflows/pui-agent.ts'
       - 'workflows/steps/pui-cycle-v2.ts'
+      - 'workflows/steps/resident-status.ts'
 
 permissions:
   contents: read
