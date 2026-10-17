@@ -28,9 +28,9 @@ function failureText(error: unknown) {
   return String(error);
 }
 
-// Version the workflow symbol when the durable orchestration contract changes.
-// This prevents a new /start call from reviving an older registered definition.
-export async function puiAgentWorkflowV3(holder: string) {
+// Version the workflow symbol whenever the durable orchestration graph changes.
+// V4 binds the isolated resident-lease step instead of the legacy pui-cycle lease step.
+export async function puiAgentWorkflowV4(holder: string) {
   "use workflow";
 
   let firstLease: Awaited<ReturnType<typeof acquireLeaseStep>>;

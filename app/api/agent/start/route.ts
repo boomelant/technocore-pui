@@ -1,5 +1,5 @@
 import { start } from "workflow/api";
-import { puiAgentWorkflowV3 } from "@/workflows/pui-agent";
+import { puiAgentWorkflowV4 } from "@/workflows/pui-agent";
 import { verifyGithubActionsOidc } from "@/src/cloud/github-oidc.mjs";
 
 const HOLDER = /^[a-z0-9][a-z0-9-]{0,38}$/;
@@ -29,8 +29,8 @@ async function launch(request: Request) {
     return Response.json({ error: "invalid holder" }, { status: 400 });
   }
   const holder = requestedHolder || `vercel-${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
-  const run = await start(puiAgentWorkflowV3, [holder]);
-  return Response.json({ status: "started", runId: run.runId, holder, workflow: "puiAgentWorkflowV3" });
+  const run = await start(puiAgentWorkflowV4, [holder]);
+  return Response.json({ status: "started", runId: run.runId, holder, workflow: "puiAgentWorkflowV4" });
 }
 
 export const GET = launch;
