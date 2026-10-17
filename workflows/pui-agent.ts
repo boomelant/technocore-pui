@@ -22,7 +22,9 @@ export type PuiCloudState = {
   presence: string;
 };
 
-export async function puiAgentWorkflow(holder: string) {
+// Version the workflow symbol when the durable orchestration contract changes.
+// This prevents a new /start call from reviving an older registered definition.
+export async function puiAgentWorkflowV3(holder: string) {
   "use workflow";
 
   const firstLease = await acquireLeaseStep(holder, null);
