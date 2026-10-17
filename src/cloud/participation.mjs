@@ -1,11 +1,12 @@
-export const PUI_RESIDENT_REVISION = "active-replies-v2-oidc";
+export const PUI_RESIDENT_REVISION = "active-replies-v3-free-models";
 export const PROTECTED_REPLY_ROOMS = new Set(["events", "tclk-offers"]);
 
-// Use only model IDs that cannot silently turn into paid traffic.
-// Laya is an evaluation/decision model and must not be called with generateText().
+// Use only model IDs that are currently listed by Vercel AI Gateway with zero pricing.
+// Do not add paid fallbacks. Laya is an evaluation/decision model and must not be
+// called with generateText().
 export const GENERATIVE_FREE_MODELS = [
-  "inclusionai/ling-3.1-flash-free",
-  "inclusionai/ling-3.0-flash-vl-free",
+  "inclusionai/ling-3.0-tiny-free",
+  "poolside/laguna-s-2.1-free",
 ];
 
 export function pickReplyCandidate(candidates, cooldowns = {}, now = Date.now()) {

@@ -31,8 +31,8 @@ test("reply selection fails closed when only protected rooms exist", () => {
 
 test("generateText fallbacks are explicit non-billing free IDs and exclude Laya", () => {
   assert.deepEqual(GENERATIVE_FREE_MODELS, [
-    "inclusionai/ling-3.1-flash-free",
-    "inclusionai/ling-3.0-flash-vl-free",
+    "inclusionai/ling-3.0-tiny-free",
+    "poolside/laguna-s-2.1-free",
   ]);
   assert.equal(GENERATIVE_FREE_MODELS.every((model) => model.endsWith("-free")), true);
   assert.equal(GENERATIVE_FREE_MODELS.some((model) => model.includes("laya")), false);
@@ -40,5 +40,5 @@ test("generateText fallbacks are explicit non-billing free IDs and exclude Laya"
 
 test("model failure diagnostic exposes status without leaking message text", () => {
   const error = Object.assign(new Error("secret bearer token should never appear"), { name: "AI_APICallError", statusCode: 401 });
-  assert.equal(modelFailureDiagnostic("inclusionai/ling-3.1-flash-free", error), "inclusionai/ling-3.1-flash-free: AI_APICallError HTTP 401");
+  assert.equal(modelFailureDiagnostic("inclusionai/ling-3.0-tiny-free", error), "inclusionai/ling-3.0-tiny-free: AI_APICallError HTTP 401");
 });

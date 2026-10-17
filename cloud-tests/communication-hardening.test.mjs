@@ -4,11 +4,11 @@ import test from "node:test";
 
 const source = readFileSync(new URL("../workflows/steps/pui-cycle-v2.ts", import.meta.url), "utf8");
 
-test("Technocore reads are bounded to 50 messages and six rooms", () => {
+test("Technocore reads are bounded to 50 messages and six total watched rooms", () => {
   assert.match(source, /const MAX_MESSAGES_PER_ROOM = 50;/);
   assert.match(source, /const MAX_WATCH_ROOMS = 6;/);
   assert.match(source, /Math\.min\(MAX_MESSAGES_PER_ROOM, Math\.floor\(limit\)\)/);
-  assert.match(source, /boundedWatchRooms\([\s\S]*MAX_WATCH_ROOMS\)/);
+  assert.match(source, /boundedWatchRooms\([\s\S]*MAX_WATCH_ROOMS\)[\s\S]*\.slice\(0, MAX_WATCH_ROOMS\)/);
 });
 
 test("room batches reject invalid, replayed and non-monotonic seq values", () => {
@@ -17,10 +17,12 @@ test("room batches reject invalid, replayed and non-monotonic seq values", () =>
   assert.match(source, /validateMessageBatch\(room, messages, since\)/);
 });
 
-test("mailbox presence requires a valid room signature before trust", () => {
+test("mailbox presence requires a valid room signature before trust and fails closed on initial read errors", () => {
   const ensurePresence = source.slice(source.indexOf("async function ensurePresence"), source.indexOf("function sha("));
   assert.match(ensurePresence, /verifyRoomRecord\(mailbox, m\)/);
-  assert.match(ensurePresence, /readRoom\(mailbox, null, MAX_MESSAGES_PER_ROOM\)/);
+  assert.match(ensurePresence, /messages = await readRoom\(mailbox, null, MAX_MESSAGES_PER_ROOM\)/);
+  assert.match(ensurePresence, /presence: `deferred_read_/);
+  assert.doesNotMatch(ensurePresence, /readRoom\(mailbox, null, MAX_MESSAGES_PER_ROOM\)\.catch/);
   assert.match(ensurePresence, /readRoom\(mailbox, beforeSeq, MAX_MESSAGES_PER_ROOM\)/);
 });
 

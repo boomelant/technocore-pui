@@ -40,7 +40,7 @@ export async function puiAgentWorkflow(holder: string) {
     cooldowns: {},
     lastNonceByRoom: { [bootstrap.mailbox]: bootstrap.nonce },
     totalObserved: 0,
-    totalReplies: bootstrap.presence === "confirmed" ? 1 : 0,
+    totalReplies: 0,
     leaseValue: firstLease.value,
     mailbox: bootstrap.mailbox,
     holder,
