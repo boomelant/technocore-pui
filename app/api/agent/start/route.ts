@@ -4,6 +4,16 @@ import { verifyGithubActionsOidc } from "@/src/cloud/github-oidc.mjs";
 
 const HOLDER = /^[a-z0-9][a-z0-9-]{0,38}$/;
 
+function boundedStartError(error: unknown) {
+  const raw = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+  return raw
+    .replace(/Bearer\s+\S+/gi, "Bearer [redacted]")
+    .replace(/[A-Za-z0-9_-]{80,}/g, "[redacted]")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 220);
+}
+
 async function authorized(request: Request) {
   const auth = request.headers.get("authorization") ?? "";
   const secret = process.env.CRON_SECRET;
@@ -29,8 +39,16 @@ async function launch(request: Request) {
     return Response.json({ error: "invalid holder" }, { status: 400 });
   }
   const holder = requestedHolder || `vercel-${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
-  const run = await start(puiAgentWorkflowV4, [holder]);
-  return Response.json({ status: "started", runId: run.runId, holder, workflow: "puiAgentWorkflowV4" });
+
+  try {
+    const run = await start(puiAgentWorkflowV4, [holder]);
+    return Response.json({ status: "started", runId: run.runId, holder, workflow: "puiAgentWorkflowV4" });
+  } catch (error) {
+    return Response.json(
+      { error: "workflow_start_failed", detail: boundedStartError(error), holder, workflow: "puiAgentWorkflowV4" },
+      { status: 503 },
+    );
+  }
 }
 
 export const GET = launch;
