@@ -5,6 +5,7 @@ import {
   observeAndDecideStep,
   postReplyStep,
 } from "./steps/pui-cycle-v2";
+import { publishLifecycleStatusStep } from "./steps/resident-status";
 
 export type PuiCloudState = {
   cycle: number;
@@ -21,6 +22,11 @@ export type PuiCloudState = {
   holder: string;
   presence: string;
 };
+
+function failureText(error: unknown) {
+  if (error instanceof Error) return `${error.name}: ${error.message}`;
+  return String(error);
+}
 
 // Version the workflow symbol when the durable orchestration contract changes.
 // This prevents a new /start call from reviving an older registered definition.
@@ -49,8 +55,29 @@ export async function puiAgentWorkflowV3(holder: string) {
     presence: bootstrap.presence,
   };
 
+  await publishLifecycleStatusStep({
+    holder,
+    cycle: 0,
+    presence: bootstrap.presence,
+    phase: "bootstrapped",
+  });
+
   while (true) {
-    const cycleResult = await observeAndDecideStep(state);
+    let cycleResult: Awaited<ReturnType<typeof observeAndDecideStep>>;
+    try {
+      cycleResult = await observeAndDecideStep(state);
+    } catch (error) {
+      const failure = failureText(error);
+      await publishLifecycleStatusStep({
+        holder,
+        cycle: state.cycle,
+        presence: state.presence,
+        phase: "observe_failed",
+        failure,
+      });
+      return { status: "failed", reason: "observe_failed", holder, failure };
+    }
+
     state = cycleResult.state;
 
     if (cycleResult.action) {
