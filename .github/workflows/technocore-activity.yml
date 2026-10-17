@@ -28,7 +28,7 @@ jobs:
       TARGET_URL: https://technocore-pui.vercel.app/api/agent/start
       HEALTH_URL: https://technocore-pui.vercel.app/api/agent/health
       LEASE_URL: https://technocore.chat/kv/pui-cloud/resident-lease
-      EXPECTED_REVISION: active-replies-v2-oidc
+      EXPECTED_REVISION: active-replies-v3-free-models
       EXPECTED_DID: did:key:z6Mkub4QuoxnRWkzjKLmJtcikyoYjVEhrZVtvs2EA3PX1N3f
     steps:
       - name: Ensure current PUI Technocore resident
