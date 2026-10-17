@@ -33,12 +33,36 @@ function failureText(error: unknown) {
 export async function puiAgentWorkflowV3(holder: string) {
   "use workflow";
 
-  const firstLease = await acquireLeaseStep(holder, null);
+  let firstLease: Awaited<ReturnType<typeof acquireLeaseStep>>;
+  try {
+    firstLease = await acquireLeaseStep(holder, null);
+  } catch (error) {
+    const failure = failureText(error);
+    await publishLifecycleStatusStep({ holder, cycle: 0, phase: "lease_failed", failure });
+    return { status: "failed", reason: "lease_failed", holder, failure };
+  }
+
   if (!firstLease.acquired) {
+    await publishLifecycleStatusStep({
+      holder,
+      cycle: 0,
+      phase: "lease_rejected",
+      failure: firstLease.reason,
+    });
     return { status: "standby", reason: firstLease.reason, holder };
   }
 
-  const bootstrap = await bootstrapIdentityStep("0");
+  await publishLifecycleStatusStep({ holder, cycle: 0, phase: "lease_acquired" });
+
+  let bootstrap: Awaited<ReturnType<typeof bootstrapIdentityStep>>;
+  try {
+    bootstrap = await bootstrapIdentityStep("0");
+  } catch (error) {
+    const failure = failureText(error);
+    await publishLifecycleStatusStep({ holder, cycle: 0, phase: "bootstrap_failed", failure });
+    return { status: "failed", reason: "bootstrap_failed", holder, failure };
+  }
+
   let state: PuiCloudState = {
     cycle: 0,
     eventCursor: null,
