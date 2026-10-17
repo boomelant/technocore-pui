@@ -130,7 +130,12 @@ async function postSigned(room: string, text: string, nonce: string) {
 }
 
 async function ensurePresence(mailbox: string, previousNonce: string) {
-  const messages = await readRoom(mailbox, null, MAX_MESSAGES_PER_ROOM).catch((): Message[] => []);
+  let messages: Message[];
+  try {
+    messages = await readRoom(mailbox, null, MAX_MESSAGES_PER_ROOM);
+  } catch (error: any) {
+    return { nonce: previousNonce, presence: `deferred_read_${String(error?.name ?? "error").slice(0, 40)}` };
+  }
   const existing = messages.find((m) =>
     m.from === PUI_DID &&
     String(m.text ?? "").startsWith("PUI cloud resident online") &&
@@ -265,7 +270,10 @@ export async function observeAndDecideStep(state: PuiCloudState) {
   }
 
   const defaults: string[] = Array.isArray(DEFAULT_ROOMS) ? [...DEFAULT_ROOMS] : [];
-  const watchRooms = boundedWatchRooms([...defaults, state.mailbox], discovered, [...available, state.mailbox], MAX_WATCH_ROOMS) as string[];
+  const preferredBase = [state.mailbox, "technocore", "tclk-offers", ...defaults]
+    .filter((room, index, rows) => rows.indexOf(room) === index);
+  const watchRooms = (boundedWatchRooms(preferredBase, discovered, [...available, state.mailbox], MAX_WATCH_ROOMS) as string[])
+    .slice(0, MAX_WATCH_ROOMS);
   const roomCursors = { ...state.roomCursors };
   const candidates: Candidate[] = [];
   let observed = 0;
