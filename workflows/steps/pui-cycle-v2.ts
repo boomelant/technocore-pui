@@ -164,6 +164,42 @@ async function ensurePresence(mailbox: string, previousNonce: string) {
   }
 }
 
+const SIGNED_TECHNOCORE_TEST = "PUI signed interoperability test (2026-10-18): Our cloud resident has restored room reads and is validating signed POST with verified read-back. If a signed write is accepted but the acknowledgement is lost, should a client retry the identical nonce/signature or first search for its original message and fail closed on ambiguity? A reproducible example involving seq ordering would help.";
+
+async function sendSignedTestOnce(): Promise<{ status: string; room: string; seq?: number }> {
+  const room = "technocore";
+  const key = "signed-test-20261018";
+  // A persistent conditional claim prevents duplicate public tests after workflow restarts.
+  const existing = await readNote(LEASE_NS, key);
+  if (existing.found) return { status: "already_claimed", room };
+  const before = await readRoom(room, null, MAX_MESSAGES_PER_ROOM);
+  const earlier = before.find((m) =>
+    m.from === PUI_DID &&
+    m.text === SIGNED_TECHNOCORE_TEST &&
+    Number.isSafeInteger(m.seq) &&
+    verifyRoomRecord(room, m)
+  );
+  if (earlier) return { status: "already_confirmed", room, seq: earlier.seq };
+  const nonce = nextNonce("0") as string;
+  const claim = await writeNote(LEASE_NS, key, `claimed|${nonce}`, { if_absent: true });
+  if (!claim.ok) return { status: claim.status === 409 ? "claim_race" : `claim_http_${claim.status}`, room };
+  const previousSeq = before.reduce((max, m) =>
+    Number.isSafeInteger(m.seq) ? Math.max(max, Number(m.seq)) : max, 0);
+  const sent = await postSigned(room, SIGNED_TECHNOCORE_TEST, nonce);
+  if (!sent.ok) return { status: `post_http_${sent.status}`, room };
+  const after = await readRoom(room, previousSeq, MAX_MESSAGES_PER_ROOM);
+  const confirmed = after.find((m) =>
+    m.from === PUI_DID && m.text === sent.payload.text &&
+    String(m.nonce) === nonce && m.sig === sent.payload.sig &&
+    Number.isSafeInteger(m.seq) && verifyRoomRecord(room, m)
+  );
+  if (!confirmed) return { status: "unconfirmed_no_retry", room };
+  // A separate public diagnostic receipt contains only room and seq, never signing material.
+  const receipt = JSON.stringify({ room, seq: confirmed.seq, status: "confirmed" });
+  await writeNote(LEASE_NS, `${key}-receipt`, receipt).catch(() => null);
+  return { status: "confirmed", room, seq: confirmed.seq };
+}
+
 function sha(text: string) { return createHash("sha256").update(text, "utf8").digest("hex"); }
 
 export async function bootstrapIdentityStep(previousNonce = "0") {
@@ -248,6 +284,16 @@ async function officialSourceChanges(previous: Record<string, string>) {
 export async function observeAndDecideStep(state: PuiCloudState) {
   "use step";
   const now = Date.now();
+  // One explicitly user-authorized protocol test, not a recurring autonomous post.
+  // Never attempt it when autonomous write is disabled, and never retry ambiguity.
+  let signedTest: { status: string; room: string; seq?: number } | null = null;
+  if (state.cycle === 0 && process.env.PUI_AUTONOMOUS_WRITE === "1") {
+    try {
+      signedTest = await sendSignedTestOnce();
+    } catch {
+      signedTest = { status: "transport_error_no_retry", room: "technocore" };
+    }
+  }
   const available = await listRooms();
   const events = await readRoom("events", state.eventCursor, MAX_MESSAGES_PER_ROOM);
   let eventCursor = state.eventCursor;
@@ -326,7 +372,8 @@ export async function observeAndDecideStep(state: PuiCloudState) {
       confidence: modelDecision.confidence,
       model: modelDecision.model,
       failure: modelDecision.model === null ? modelDecision.rationale.slice(0, 180) : null,
-    } : null,
+      signedTest,
+    } : signedTest ? { decision: "observe", confidence: 1, model: null, signedTest } : null,
     officialChanged, zeroCost: true,
   };
   await writeNote("pui-cloud", "status", JSON.stringify(status)).catch(() => ({ ok: false }));
