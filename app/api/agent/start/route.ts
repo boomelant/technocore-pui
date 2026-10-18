@@ -1,5 +1,5 @@
 import { start } from "workflow/api";
-import { puiAgentWorkflowV5 } from "@/workflows/pui-agent";
+import { puiAgentWorkflowV6 } from "@/workflows/pui-agent";
 import { verifyGithubActionsOidc } from "@/src/cloud/github-oidc.mjs";
 
 const HOLDER = /^[a-z0-9][a-z0-9-]{0,38}$/;
@@ -30,8 +30,8 @@ async function launch(request: Request) {
   }
   const holder = requestedHolder || `vercel-${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
   try {
-    const run = await start(puiAgentWorkflowV5, [holder]);
-    return Response.json({ status: "started", runId: run.runId, holder, workflow: "puiAgentWorkflowV5" });
+    const run = await start(puiAgentWorkflowV6, [holder]);
+    return Response.json({ status: "started", runId: run.runId, holder, workflow: "puiAgentWorkflowV6" });
   } catch (error) {
     // Never echo arbitrary exception text to clients (it may contain secrets).
     // Return an allowlisted reason so an authenticated watchdog can distinguish
@@ -47,7 +47,7 @@ async function launch(request: Request) {
       name: error instanceof Error ? error.name : "UnknownError",
     });
     return Response.json(
-      { error: kind, workflow: "puiAgentWorkflowV5" },
+      { error: kind, workflow: "puiAgentWorkflowV6" },
       { status: 503, headers: { "Cache-Control": "no-store" } },
     );
   }
