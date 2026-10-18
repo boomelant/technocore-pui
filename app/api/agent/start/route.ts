@@ -29,8 +29,28 @@ async function launch(request: Request) {
     return Response.json({ error: "invalid holder" }, { status: 400 });
   }
   const holder = requestedHolder || `vercel-${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
-  const run = await start(puiAgentWorkflowV4, [holder]);
-  return Response.json({ status: "started", runId: run.runId, holder, workflow: "puiAgentWorkflowV4" });
+  try {
+    const run = await start(puiAgentWorkflowV4, [holder]);
+    return Response.json({ status: "started", runId: run.runId, holder, workflow: "puiAgentWorkflowV4" });
+  } catch (error) {
+    // Never echo arbitrary exception text to clients (it may contain secrets).
+    // Return an allowlisted reason so an authenticated watchdog can distinguish
+    // an unregistered workflow from a transient server-side failure.
+    const message = error instanceof Error ? error.message : String(error);
+    const kind = /step .*not registered in the current deployment/i.test(message)
+      ? "workflow_step_unregistered"
+      : /invalid workflow function|workflow .*not registered|cannot find workflow/i.test(message)
+        ? "workflow_entry_unregistered"
+        : "workflow_start_failed";
+    console.error("PUI resident start failed", {
+      kind,
+      name: error instanceof Error ? error.name : "UnknownError",
+    });
+    return Response.json(
+      { error: kind, workflow: "puiAgentWorkflowV4" },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    );
+  }
 }
 
 export const GET = launch;
