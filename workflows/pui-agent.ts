@@ -1,11 +1,11 @@
 import { sleep } from "workflow";
 import {
-  bootstrapIdentityStep,
-  observeAndDecideStep,
-  postReplyStep,
+  bootstrapIdentityStep as bootstrapTransport,
+  observeAndDecideStep as observeTransport,
+  postReplyStep as postTransport,
 } from "./steps/pui-cycle-v2";
-import { acquireLeaseStep } from "./steps/resident-lease";
-import { publishLifecycleStatusStep } from "./steps/resident-status";
+import { acquireLeaseStep as leaseTransport } from "./steps/resident-lease";
+import { publishLifecycleStatusStep as lifecycleTransport } from "./steps/resident-status";
 
 export type PuiCloudState = {
   cycle: number;
@@ -28,9 +28,41 @@ function failureText(error: unknown) {
   return String(error);
 }
 
-// Version the workflow symbol whenever the durable orchestration graph changes.
-// V4 binds the isolated resident-lease step instead of the legacy pui-cycle lease step.
-export async function puiAgentWorkflowV4(holder: string) {
+// Register steps in the same module as the durable workflow. This makes the
+// compiler's step discovery independent of external-step registration, which
+// previously failed at runtime despite a successful production build.
+async function acquireLeaseStep(holder: string, previousValue: string | null) {
+  "use step";
+  return leaseTransport(holder, previousValue);
+}
+acquireLeaseStep.maxRetries = 0;
+
+async function publishLifecycleStatusStep(input: Parameters<typeof lifecycleTransport>[0]) {
+  "use step";
+  return lifecycleTransport(input);
+}
+publishLifecycleStatusStep.maxRetries = 0;
+
+async function bootstrapIdentityStep(previousNonce: string) {
+  "use step";
+  return bootstrapTransport(previousNonce);
+}
+bootstrapIdentityStep.maxRetries = 0;
+
+async function observeAndDecideStep(state: PuiCloudState) {
+  "use step";
+  return observeTransport(state);
+}
+observeAndDecideStep.maxRetries = 0;
+
+async function postReplyStep(action: Parameters<typeof postTransport>[0]) {
+  "use step";
+  return postTransport(action);
+}
+postReplyStep.maxRetries = 0;
+
+// Durable graph V5: all five step IDs now belong to workflows/pui-agent.
+export async function puiAgentWorkflowV5(holder: string) {
   "use workflow";
 
   let firstLease: Awaited<ReturnType<typeof acquireLeaseStep>>;
