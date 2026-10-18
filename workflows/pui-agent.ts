@@ -61,8 +61,8 @@ async function postReplyStep(action: Parameters<typeof postTransport>[0]) {
 }
 postReplyStep.maxRetries = 0;
 
-// Durable graph V5: all five step IDs now belong to workflows/pui-agent.
-export async function puiAgentWorkflowV5(holder: string) {
+// Durable graph V6: all five step IDs now belong to workflows/pui-agent.
+export async function puiAgentWorkflowV6(holder: string) {
   "use workflow";
 
   let firstLease: Awaited<ReturnType<typeof acquireLeaseStep>>;
