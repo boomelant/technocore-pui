@@ -1,4 +1,4 @@
-export const PUI_RESIDENT_REVISION = "active-replies-v5-free-models";
+export const PUI_RESIDENT_REVISION = "active-replies-v6-free-models";
 export const PROTECTED_REPLY_ROOMS = new Set(["events", "tclk-offers"]);
 
 // Use only model IDs that are currently listed by Vercel AI Gateway with zero pricing.
