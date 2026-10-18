@@ -134,10 +134,24 @@ jobs:
           )"
 
           start_resident() {
-            curl -fsS -X POST \
+            local code
+            code="$(curl -sS -o /tmp/pui-start-response -w '%{http_code}' -X POST \
               -H "Authorization: Bearer ${TOKEN}" \
               -H "x-pui-holder: ${HOLDER}" \
-              "$TARGET_URL"
+              "$TARGET_URL")"
+            if [ "$code" != "200" ]; then
+              echo "resident start HTTP ${code} (allowlisted server diagnostic follows):" >&2
+              python3 - <<'PY'
+          import json
+          try:
+              value = json.load(open('/tmp/pui-start-response'))
+              print(json.dumps({k: value.get(k) for k in ('error', 'workflow')}, separators=(',', ':')))
+          except (OSError, ValueError):
+              print('start response is not valid JSON')
+          PY
+              return 1
+            fi
+            cat /tmp/pui-start-response
           }
 
           # A stale durable workflow can keep renewing its old deployment forever.
