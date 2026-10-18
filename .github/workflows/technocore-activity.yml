@@ -13,6 +13,7 @@ on:
       - 'workflows/pui-agent.ts'
       - 'workflows/steps/pui-cycle-v2.ts'
       - 'workflows/steps/resident-status.ts'
+      - 'workflows/steps/resident-lease.ts'
 
 permissions:
   contents: read
@@ -30,7 +31,7 @@ jobs:
       TARGET_URL: https://technocore-pui.vercel.app/api/agent/start
       HEALTH_URL: https://technocore-pui.vercel.app/api/agent/health
       LEASE_URL: https://technocore.chat/kv/pui-cloud/resident-lease
-      EXPECTED_REVISION: active-replies-v3-free-models
+      EXPECTED_REVISION: active-replies-v5-free-models
       EXPECTED_DID: did:key:z6Mkub4QuoxnRWkzjKLmJtcikyoYjVEhrZVtvs2EA3PX1N3f
     steps:
       - name: Ensure current PUI Technocore resident
