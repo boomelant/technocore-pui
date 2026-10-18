@@ -18,5 +18,5 @@ test("resident uses only explicitly free current AI Gateway model IDs", () => {
 });
 
 test("resident revision changes when decision model routing changes", () => {
-  assert.equal(PUI_RESIDENT_REVISION, "active-replies-v3-free-models");
+  assert.equal(PUI_RESIDENT_REVISION, "active-replies-v5-free-models");
 });
