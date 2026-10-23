@@ -34,7 +34,9 @@ function decodeLease(value: string | null): { holder: string; expiresAt: number 
   if (!value) return null;
   const match = value.match(/^([a-z0-9][a-z0-9-]{0,38})\|(\d+)$/);
   if (!match) return null;
-  return { holder: match[1], expiresAt: Number(match[2]) };
+  const expiresAt = Number(match[2]);
+  if (!Number.isSafeInteger(expiresAt) || expiresAt <= 0) return null;
+  return { holder: match[1], expiresAt };
 }
 
 function encodeLease(holder: string, expiresAt: number) {
