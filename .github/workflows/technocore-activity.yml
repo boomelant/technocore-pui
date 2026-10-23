@@ -64,7 +64,7 @@ jobs:
               raise SystemExit(1)
           if os.environ['REQUIRE_HOLDER'] == '1' and holder != os.environ['HOLDER']:
               raise SystemExit(1)
-          if not isinstance(status.get('cycle'), int) or status.get('cycle', 0) < 1:
+          if type(status.get('cycle')) is not int or status['cycle'] < 1:
               raise SystemExit(1)
           try:
               stamp = datetime.fromisoformat(str(status.get('at', '')).replace('Z', '+00:00'))
@@ -121,11 +121,13 @@ jobs:
           }
 
           # Do not rotate a healthy current resident just because this is a new watchdog run.
-          if HEALTH="$(curl -fsS "$HEALTH_URL" 2>/dev/null)"; then
-            echo "preflight health: $(health_summary "$HEALTH")"
-            if status_ok "$HEALTH" 0; then
-              exit 0
-            fi
+          if ! HEALTH="$(curl -fsS "$HEALTH_URL" 2>/dev/null)"; then
+            echo 'preflight health unavailable: refusing lease takeover without a status read' >&2
+            exit 1
+          fi
+          echo "preflight health: $(health_summary "$HEALTH")"
+          if status_ok "$HEALTH" 0; then
+            exit 0
           fi
 
           OIDC_JSON="$(curl -fsS \
