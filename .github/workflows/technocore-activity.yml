@@ -73,6 +73,13 @@ jobs:
               raise SystemExit(1)
           if age < -120 or age > 720:
               raise SystemExit(1)
+          # A terminated observe step is not healthy, even with a fresh timestamp.
+          # Model HTTP 403 alone is a participation failure, not a lease failure.
+          decision = status.get('decision')
+          if status.get('phase') == 'observe_failed' or (
+              isinstance(decision, dict) and str(decision.get('failure', '')).startswith('runtime observe_failed:')
+          ):
+              raise SystemExit(1)
           print(json.dumps({
               'holder': holder,
               'revision': status.get('revision'),
