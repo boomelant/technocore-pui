@@ -65,3 +65,48 @@ test('wrong DID, stale status, wrong holder and zero cycle fail closed', () => {
   const zeroCycle = base(); zeroCycle.residentStatus.cycle = 0;
   assert.notEqual(check(zeroCycle).status, 0);
 });
+
+test('boolean cycle is not a valid cycle counter', () => {
+  const status = base(); status.residentStatus.cycle = true;
+  assert.notEqual(check(status).status, 0);
+  const valid = base(); valid.residentStatus.cycle = 1;
+  assert.equal(check(valid).status, 0);
+});
+
+// Execute the actual shell preflight extracted from the workflow, with stubbed I/O.
+const preflightStart = workflow.indexOf('          # Do not rotate a healthy current resident just because this is a new watchdog run.');
+const preflightEnd = workflow.indexOf('          OIDC_JSON=', preflightStart);
+assert.ok(preflightStart > 0 && preflightEnd > preflightStart, 'watchdog preflight must remain present');
+const preflightScript = workflow.slice(preflightStart, preflightEnd).split('\n')
+  .map(line => line.startsWith('          ') ? line.slice(10) : line).join('\n');
+function checkPreflight(fetchOk, healthy) {
+  const preamble = `set -euo pipefail
+HEALTH_URL=https://example.invalid/api/agent/health
+curl() { if [ "$FETCH_OK" = "1" ]; then printf '{"residentStatus":{}}'; else return 22; fi; }
+health_summary() { printf 'fixture'; }
+status_ok() { [ "$STATUS_HEALTHY" = "1" ]; }
+`;
+  const run = spawnSync('bash', ['-c', preamble + preflightScript + '\nprintf "TAKEOVER_PATH_REACHED\\n"\n'], {
+    encoding: 'utf8', timeout: 5000,
+    env: { ...process.env, FETCH_OK: fetchOk ? '1' : '0', STATUS_HEALTHY: healthy ? '1' : '0' },
+  });
+  assert.equal(run.error, undefined, run.error?.message);
+  return run;
+}
+
+test('health transport failure stops before OIDC and lease CAS', () => {
+  const run = checkPreflight(false, false);
+  assert.equal(run.status, 1, run.stderr);
+  assert.match(run.stderr, /refusing lease takeover without a status read/);
+  assert.doesNotMatch(run.stdout, /TAKEOVER_PATH_REACHED/);
+});
+test('readable healthy resident exits without takeover', () => {
+  const run = checkPreflight(true, true);
+  assert.equal(run.status, 0, run.stderr);
+  assert.doesNotMatch(run.stdout, /TAKEOVER_PATH_REACHED/);
+});
+test('readable unhealthy resident may proceed to guarded takeover', () => {
+  const run = checkPreflight(true, false);
+  assert.equal(run.status, 0, run.stderr);
+  assert.match(run.stdout, /TAKEOVER_PATH_REACHED/);
+});
