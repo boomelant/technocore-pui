@@ -1,6 +1,7 @@
 import { start } from "workflow/api";
 import { puiAgentWorkflowV6 } from "@/workflows/pui-agent";
 import { verifyGithubActionsOidc } from "@/src/cloud/github-oidc.mjs";
+import { assertPuiIdentity } from "@/src/cloud/core.mjs";
 
 const HOLDER = /^[a-z0-9][a-z0-9-]{0,38}$/;
 
@@ -22,6 +23,15 @@ async function launch(request: Request) {
   }
   if (!process.env.PUI_SEED) {
     return Response.json({ error: "PUI_SEED missing" }, { status: 503 });
+  }
+  // Verify the canonical signing identity before the workflow can acquire a lease.
+  try {
+    assertPuiIdentity(process.env.PUI_SEED);
+  } catch {
+    return Response.json(
+      { error: "pui_identity_mismatch" },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    );
   }
 
   const requestedHolder = request.headers.get("x-pui-holder")?.trim() ?? "";
