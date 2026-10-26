@@ -141,7 +141,7 @@ export async function puiAgentWorkflowV6(holder: string) {
       if (posted.status === "confirmed") state.totalReplies += 1;
     }
 
-    await sleep("5m");
+    await sleep("1h");
 
     const lease = await acquireLeaseStep(holder, state.leaseValue);
     if (!lease.acquired) {
