@@ -7,8 +7,8 @@ import {
 } from "../src/cloud/participation.mjs";
 
 const EXPECTED_FREE_MODELS = [
-  "inclusionai/ling-3.0-tiny-free",
-  "poolside/laguna-s-2.1-free",
+  "reflection/beam-free",
+  "nvidia/nemotron-3.5-lightning-free",
 ];
 
 test("resident uses only explicitly free current AI Gateway model IDs", () => {
@@ -18,5 +18,5 @@ test("resident uses only explicitly free current AI Gateway model IDs", () => {
 });
 
 test("resident revision changes when decision model routing changes", () => {
-  assert.equal(PUI_RESIDENT_REVISION, "active-replies-v6-free-models");
+  assert.equal(PUI_RESIDENT_REVISION, "active-replies-v7-free-models");
 });
