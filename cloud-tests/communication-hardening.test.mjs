@@ -17,13 +17,12 @@ test("room batches reject invalid, replayed and non-monotonic seq values", () =>
   assert.match(source, /validateMessageBatch\(room, messages, since\)/);
 });
 
-test("mailbox presence requires a valid room signature before trust and fails closed on initial read errors", () => {
-  const ensurePresence = source.slice(source.indexOf("async function ensurePresence"), source.indexOf("function sha("));
-  assert.match(ensurePresence, /verifyRoomRecord\(mailbox, m\)/);
-  assert.match(ensurePresence, /messages = await readRoom\(mailbox, null, MAX_MESSAGES_PER_ROOM\)/);
-  assert.match(ensurePresence, /presence: `deferred_read_/);
-  assert.doesNotMatch(ensurePresence, /readRoom\(mailbox, null, MAX_MESSAGES_PER_ROOM\)\.catch/);
-  assert.match(ensurePresence, /readRoom\(mailbox, beforeSeq, MAX_MESSAGES_PER_ROOM\)/);
+test("mailbox nonce discovery verifies signatures and never publishes presence", () => {
+  const reader = source.slice(source.indexOf("async function readMailboxNonce"), source.indexOf("function sha("));
+  assert.match(reader, /verifyRoomRecord\\(mailbox, m\\)/);
+  assert.match(reader, /await readRoom\\(mailbox, null, MAX_MESSAGES_PER_ROOM\\)/);
+  assert.match(reader, /presence: "read_only"/);
+  assert.doesNotMatch(reader, /\\.catch\\(|method: "POST"|postSigned/);
 });
 
 test("reply write verifies source and signed read-back with bounded incremental reads", () => {
