@@ -284,16 +284,8 @@ async function officialSourceChanges(previous: Record<string, string>) {
 export async function observeAndDecideStep(state: PuiCloudState) {
   "use step";
   const now = Date.now();
-  // One explicitly user-authorized protocol test, not a recurring autonomous post.
-  // Never attempt it when autonomous write is disabled, and never retry ambiguity.
-  let signedTest: { status: string; room: string; seq?: number } | null = null;
-  if (state.cycle === 0 && process.env.PUI_AUTONOMOUS_WRITE === "1") {
-    try {
-      signedTest = await sendSignedTestOnce();
-    } catch {
-      signedTest = { status: "transport_error_no_retry", room: "technocore" };
-    }
-  }
+  // Public protocol tests are not autonomous participation; never post them per cycle.
+  const signedTest: null = null;
   const available = await listRooms();
   const events = await readRoom("events", state.eventCursor, MAX_MESSAGES_PER_ROOM);
   let eventCursor = state.eventCursor;
@@ -307,13 +299,9 @@ export async function observeAndDecideStep(state: PuiCloudState) {
     if (!discovered.includes(room)) discovered.push(room);
   }
 
-  let presence = state.presence;
+  // Mailbox is read as a room; never publish recurring presence announcements.
+  const presence = state.presence;
   const lastNonceByRoom = { ...state.lastNonceByRoom };
-  if (!new Set(["confirmed", "already_present"]).has(presence)) {
-    const retry = await ensurePresence(state.mailbox, lastNonceByRoom[state.mailbox] ?? "0");
-    lastNonceByRoom[state.mailbox] = retry.nonce;
-    presence = retry.presence;
-  }
 
   const defaults: string[] = Array.isArray(DEFAULT_ROOMS) ? [...DEFAULT_ROOMS] : [];
   const preferredBase = [state.mailbox, "technocore", "tclk-offers", ...defaults]
@@ -345,7 +333,7 @@ export async function observeAndDecideStep(state: PuiCloudState) {
     dynamicRooms: discovered.slice(-48), officialHashes,
     totalObserved: state.totalObserved + observed, lastNonceByRoom, presence,
   };
-  candidates.sort((a, b) => b.score - a.score || Number(b.source.seq ?? 0) - Number(a.source.seq ?? 0));
+  candidates.sort((a, b) => Number(b.room === state.mailbox) - Number(a.room === state.mailbox) || Number(String(b.source.text ?? "").includes(PUI_DID)) - Number(String(a.source.text ?? "").includes(PUI_DID)) || b.score - a.score || Number(b.source.seq ?? 0) - Number(a.source.seq ?? 0));
   const topObserved = candidates[0];
   const replyCandidate = pickReplyCandidate(candidates, state.cooldowns, now) as Candidate | null;
   let action: ReplyAction | null = null; let modelDecision: ModelDecision | null = null;
