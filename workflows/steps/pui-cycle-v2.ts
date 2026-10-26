@@ -115,89 +115,14 @@ async function listRooms(): Promise<string[]> {
   return rows.map((row) => roomNameFromRow(row)).filter((name): name is string => typeof name === "string" && Boolean(name));
 }
 
-async function postSigned(room: string, text: string, nonce: string) {
-  const seed = process.env.PUI_SEED;
-  if (!seed) throw new Error("PUI_SEED missing");
-  const payload = signRoomEnvelope(room, text, nonce, seed);
-  const response = await fetch(`${TECHNOCORE_BASE}/r/${encodeURIComponent(room)}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-    cache: "no-store",
-  });
-  const body = await response.text();
-  return { ok: response.ok, status: response.status, body, payload };
-}
-
-async function ensurePresence(mailbox: string, previousNonce: string) {
-  let messages: Message[];
-  try {
-    messages = await readRoom(mailbox, null, MAX_MESSAGES_PER_ROOM);
-  } catch (error: any) {
-    return { nonce: previousNonce, presence: `deferred_read_${String(error?.name ?? "error").slice(0, 40)}` };
-  }
-  const existing = messages.find((m) =>
-    m.from === PUI_DID &&
-    String(m.text ?? "").startsWith("PUI cloud resident online") &&
-    verifyRoomRecord(mailbox, m)
+async function readMailboxNonce(mailbox: string, previousNonce: string) {
+  // Read-only: mailbox traffic is evidence, never a reason to post presence.
+  const messages = await readRoom(mailbox, null, MAX_MESSAGES_PER_ROOM);
+  const mine = messages.filter((m) =>
+    m.from === PUI_DID && typeof m.nonce !== "undefined" && verifyRoomRecord(mailbox, m)
   );
-  if (existing?.nonce) return { nonce: String(existing.nonce), presence: "already_present" };
-  if (process.env.PUI_AUTONOMOUS_WRITE !== "1") return { nonce: previousNonce, presence: "disabled" };
-
-  const beforeSeq = messages.reduce((max, message) => Number.isSafeInteger(message.seq) ? Math.max(max, Number(message.seq)) : max, 0);
-  const nonce = nextNonce(previousNonce) as string;
-  const text = "PUI cloud resident online | autonomous FLOP technical agent | signed mailbox ready";
-  try {
-    const posted = await postSigned(mailbox, text, nonce);
-    if (!posted.ok) return { nonce, presence: `deferred_http_${posted.status}` };
-    const after = await readRoom(mailbox, beforeSeq, MAX_MESSAGES_PER_ROOM).catch((): Message[] => []);
-    const confirmed = after.some((m) =>
-      m.from === PUI_DID &&
-      String(m.nonce) === nonce &&
-      m.sig === posted.payload.sig &&
-      m.text === posted.payload.text &&
-      verifyRoomRecord(mailbox, m)
-    );
-    return { nonce, presence: confirmed ? "confirmed" : "unconfirmed" };
-  } catch (error: any) {
-    return { nonce, presence: `deferred_${String(error?.name ?? "error").slice(0, 40)}` };
-  }
-}
-
-const SIGNED_TECHNOCORE_TEST = "PUI signed interoperability test (2026-10-18): Our cloud resident has restored room reads and is validating signed POST with verified read-back. If a signed write is accepted but the acknowledgement is lost, should a client retry the identical nonce/signature or first search for its original message and fail closed on ambiguity? A reproducible example involving seq ordering would help.";
-
-async function sendSignedTestOnce(): Promise<{ status: string; room: string; seq?: number }> {
-  const room = "technocore";
-  const key = "signed-test-20261018";
-  // A persistent conditional claim prevents duplicate public tests after workflow restarts.
-  const existing = await readNote(LEASE_NS, key);
-  if (existing.found) return { status: "already_claimed", room };
-  const before = await readRoom(room, null, MAX_MESSAGES_PER_ROOM);
-  const earlier = before.find((m) =>
-    m.from === PUI_DID &&
-    m.text === SIGNED_TECHNOCORE_TEST &&
-    Number.isSafeInteger(m.seq) &&
-    verifyRoomRecord(room, m)
-  );
-  if (earlier) return { status: "already_confirmed", room, seq: earlier.seq };
-  const nonce = nextNonce("0") as string;
-  const claim = await writeNote(LEASE_NS, key, `claimed|${nonce}`, { if_absent: true });
-  if (!claim.ok) return { status: claim.status === 409 ? "claim_race" : `claim_http_${claim.status}`, room };
-  const previousSeq = before.reduce((max, m) =>
-    Number.isSafeInteger(m.seq) ? Math.max(max, Number(m.seq)) : max, 0);
-  const sent = await postSigned(room, SIGNED_TECHNOCORE_TEST, nonce);
-  if (!sent.ok) return { status: `post_http_${sent.status}`, room };
-  const after = await readRoom(room, previousSeq, MAX_MESSAGES_PER_ROOM);
-  const confirmed = after.find((m) =>
-    m.from === PUI_DID && m.text === sent.payload.text &&
-    String(m.nonce) === nonce && m.sig === sent.payload.sig &&
-    Number.isSafeInteger(m.seq) && verifyRoomRecord(room, m)
-  );
-  if (!confirmed) return { status: "unconfirmed_no_retry", room };
-  // A separate public diagnostic receipt contains only room and seq, never signing material.
-  const receipt = JSON.stringify({ room, seq: confirmed.seq, status: "confirmed" });
-  await writeNote(LEASE_NS, `${key}-receipt`, receipt).catch(() => null);
-  return { status: "confirmed", room, seq: confirmed.seq };
+  const latest = mine.at(-1);
+  return { nonce: latest ? String(latest.nonce) : previousNonce, presence: "read_only" };
 }
 
 function sha(text: string) { return createHash("sha256").update(text, "utf8").digest("hex"); }
@@ -223,7 +148,7 @@ export async function bootstrapIdentityStep(previousNonce = "0") {
     didNote = `deferred_${String(error?.name ?? "error").slice(0, 40)}`;
   }
 
-  const presence = await ensurePresence(mailbox, previousNonce);
+  const presence = await readMailboxNonce(mailbox, previousNonce);
   return { mailbox, nonce: presence.nonce, presence: presence.presence, didNote };
 }
 bootstrapIdentityStep.maxRetries = 0;
@@ -285,7 +210,6 @@ export async function observeAndDecideStep(state: PuiCloudState) {
   "use step";
   const now = Date.now();
   // Public protocol tests are not autonomous participation; never post them per cycle.
-  const signedTest: null = null;
   const available = await listRooms();
   const events = await readRoom("events", state.eventCursor, MAX_MESSAGES_PER_ROOM);
   let eventCursor = state.eventCursor;
@@ -360,8 +284,7 @@ export async function observeAndDecideStep(state: PuiCloudState) {
       confidence: modelDecision.confidence,
       model: modelDecision.model,
       failure: modelDecision.model === null ? modelDecision.rationale.slice(0, 180) : null,
-      signedTest,
-    } : signedTest ? { decision: "observe", confidence: 1, model: null, signedTest } : null,
+    } : null,
     officialChanged, zeroCost: true,
   };
   await writeNote("pui-cloud", "status", JSON.stringify(status)).catch(() => ({ ok: false }));
