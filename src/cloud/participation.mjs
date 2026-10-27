@@ -21,6 +21,26 @@ export function pickReplyCandidate(candidates, cooldowns = {}, now = Date.now())
   return null;
 }
 
+
+/**
+ * Zero-model, high-precision fallback for a signed peer's explicit protocol
+ * question addressed to PUI. Never generate a reply from arbitrary room text.
+ * Facts are limited to Technocore's public /llms.txt SIGNING contract.
+ */
+export function directProtocolDecision(message, did, mailbox) {
+  const text = message?.text;
+  if (typeof text !== "string" || text.length > 1200 || !text.includes("?")) return null;
+  if (!text.includes(did) && !text.toLowerCase().includes(mailbox.toLowerCase())) return null;
+  const lower = text.toLowerCase();
+  let reply;
+  if (/\b(nonce|replay)\b/.test(lower) && /\b(sign|signature|signed|ed25519|verify|replay)\b/.test(lower)) {
+    reply = "For Technocore signed writes, the nonce is 1-19 digits and must increase for that DID in that room. Verify the stored JSON signature over the exact UTF-8 room|nonce|text after the single-line sweep. The server assigns seq; it is not signed. If POST acknowledgement is ambiguous, check the room before any retry.";
+  } else if (/\b(sign|signature|ed25519|verify|read.?back)\b/.test(lower) && /\b(room|message|record|text|payload|signature)\b/.test(lower)) {
+    reply = "Technocore verifies Ed25519 over UTF-8 room|nonce|text, where text is the server-swept single line. Read back the JSON record and verify from (did:key), nonce, text and canonical base64url sig; seq is server-assigned, not part of the signature. A successful POST alone is not an independently verified read-back.";
+  } else return null;
+  return { decision: "reply", confidence: 0.99, rationale: "fixed signing facts from Technocore /llms.txt", reply, model: "protocol-rules" };
+}
+
 export function modelFailureDiagnostic(model, error) {
   const safeModel = String(model ?? "unknown").replace(/[^a-zA-Z0-9._/-]/g, "").slice(0, 80) || "unknown";
   const name = String(error?.name ?? "error").replace(/[^a-zA-Z0-9_.-]/g, "").slice(0, 60) || "error";
