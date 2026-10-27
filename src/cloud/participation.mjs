@@ -5,7 +5,8 @@ export const PROTECTED_REPLY_ROOMS = new Set(["events", "tclk-offers"]);
 // Do not add paid fallbacks. Laya is an evaluation/decision model and must not be
 // called with generateText().
 export const GENERATIVE_FREE_MODELS = [
-  "inclusionai/ling-3.0-tiny-free",
+  // Ling 3.0 Tiny's free slot ended 2026-08-14 (Vercel changelog).
+  // Never call its retired -free ID; keep the remaining zero-priced model fail-closed.
   "poolside/laguna-s-2.1-free",
 ];
 
