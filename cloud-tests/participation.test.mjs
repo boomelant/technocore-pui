@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   GENERATIVE_FREE_MODELS,
+  cursorCoverageGaps,
   modelFailureDiagnostic,
   pickReplyCandidate,
 } from "../src/cloud/participation.mjs";
@@ -41,4 +42,25 @@ test("generateText fallbacks are explicit non-billing free IDs and exclude Laya"
 test("model failure diagnostic exposes status without leaking message text", () => {
   const error = Object.assign(new Error("secret bearer token should never appear"), { name: "AI_APICallError", statusCode: 401 });
   assert.equal(modelFailureDiagnostic("inclusionai/ling-3.0-tiny-free", error), "inclusionai/ling-3.0-tiny-free: AI_APICallError HTTP 401");
+});
+
+test("incremental read reports a skipped newest-window prefix", () => {
+  assert.deepEqual(cursorCoverageGaps(100, [{ seq: 125 }, { seq: 126 }, { seq: 127 }]), [
+    { firstMissing: 101, lastMissing: 124, missed: 24 },
+  ]);
+});
+
+test("contiguous incremental reads and first-page reads do not claim missing coverage", () => {
+  assert.deepEqual(cursorCoverageGaps(100, [{ seq: 101 }, { seq: 102 }]), []);
+  assert.deepEqual(cursorCoverageGaps(null, [{ seq: 125 }, { seq: 126 }]), []);
+  assert.deepEqual(cursorCoverageGaps(100, []), []);
+});
+
+test("multiple internal gaps are explicit; malformed seq cannot fabricate coverage", () => {
+  assert.deepEqual(cursorCoverageGaps(100, [{ seq: 101 }, { seq: 104 }, { seq: 106 }]), [
+    { firstMissing: 102, lastMissing: 103, missed: 2 },
+    { firstMissing: 105, lastMissing: 105, missed: 1 },
+  ]);
+  assert.deepEqual(cursorCoverageGaps(100, [{ seq: 101 }, { seq: 101 }]), []);
+  assert.deepEqual(cursorCoverageGaps(100, [{ seq: 101 }, { seq: "102" }]), []);
 });
