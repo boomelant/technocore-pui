@@ -9,6 +9,7 @@ import {
   nextNonce,
   parseCreatedRoom,
   parseModelDecision,
+  parseTechnocoreJson,
   verifyRoomRecord,
 } from "../src/cloud/core.mjs";
 import {
@@ -73,6 +74,27 @@ test("signed Technocore record is independently re-verifiable", () => {
   const record = { from: RFC8032_DID, nonce, text, sig };
   assert.equal(verifyRoomRecord(room, record), true);
   assert.equal(verifyRoomRecord(room, { ...record, text: "tampered" }), false);
+});
+
+test("JSON numeric 19-digit nonce remains exact for Ed25519 read-back", () => {
+  const room = "technocore";
+  const nonce = "1700000000000000001"; // > 2^53, not exactly representable as JS Number
+  const text = "signed protocol question";
+  const key = createPrivateKey({
+    key: Buffer.concat([PKCS8_PREFIX, Buffer.from(RFC8032_SEED, "hex")]),
+    format: "der", type: "pkcs8",
+  });
+  const sig = cryptoSign(null, Buffer.from(`${room}|${nonce}|${text}`), key).toString("base64url");
+  const raw = `{"messages":[{"seq":1,"from":${JSON.stringify(RFC8032_DID)},"nonce":${nonce},"text":${JSON.stringify(text)},"sig":${JSON.stringify(sig)}}]}`;
+  const native = JSON.parse(raw).messages[0];
+  const exact = parseTechnocoreJson(raw).messages[0];
+  assert.equal(String(native.nonce) === nonce, false);
+  assert.equal(verifyRoomRecord(room, native), false);
+  assert.equal(exact.nonce, nonce);
+  assert.equal(verifyRoomRecord(room, exact), true);
+  assert.equal(parseTechnocoreJson('{"nonce":42}').nonce, "42");
+  assert.equal(parseTechnocoreJson('{"nonce":"1700000000000000001"}').nonce, nonce);
+  assert.throws(() => parseTechnocoreJson('{"nonce":10000000000000000000}'), /nonce/);
 });
 
 test("GitHub OIDC gate accepts only the pinned main-branch activity workflow", async () => {

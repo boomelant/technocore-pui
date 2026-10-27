@@ -27,6 +27,21 @@ const SPKI_ED25519_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
 const ROOM_RE = /^[a-z0-9][a-z0-9_-]{0,47}$/;
 const MAX_NONCE = 9_999_999_999_999_999_999n;
 
+/** Parse server JSON without rounding signed 19-digit nonce integers. Node 22+/24
+ * exposes the original numeric token via the JSON.parse reviver context.source.
+ * Signed records must be verified against the exact decimal nonce bytes.
+ */
+export function parseTechnocoreJson(raw) {
+  return JSON.parse(raw, (key, value, context) => {
+    if (key !== "nonce" || typeof value !== "number") return value;
+    const literal = context?.source;
+    if (typeof literal !== "string" || !/^[0-9]{1,19}$/.test(literal)) {
+      throw new Error("invalid or non-exact Technocore nonce");
+    }
+    return literal;
+  });
+}
+
 export function cleanSingleLine(value) {
   const text = String(value ?? "");
   let out = "";
