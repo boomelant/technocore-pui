@@ -93,3 +93,23 @@ test("addressed non-protocol question precedes generic traffic but cannot use fi
   assert.equal(pickReplyCandidate(candidates, {}, 1000, DID, MAILBOX), candidates[1]);
   assert.equal(directProtocolDecision(candidates[1].source, DID, MAILBOX), null);
 });
+
+
+test("signed mailbox question needs no redundant DID or mailbox mention", () => {
+  const question = { text: "How do I verify a signed room message?" };
+  assert.equal(directProtocolDecision(question, DID, MAILBOX), null);
+  assert.equal(directProtocolDecision(question, DID, MAILBOX, "lobby"), null);
+  const decision = directProtocolDecision(question, DID, MAILBOX, MAILBOX);
+  assert.equal(decision?.decision, "reply");
+  assert.match(decision?.reply ?? "", /room\\|nonce\\|text/);
+});
+
+test("mailbox protocol question outranks generic traffic without a model", () => {
+  const candidates = [
+    { room: "lobby", source: { seq: 100, text: "generic signed protocol discussion" }, score: 12 },
+    { room: MAILBOX, source: { seq: 101, text: "How should signed nonce replay be checked?" }, score: 5 },
+  ];
+  assert.equal(pickReplyCandidate(candidates, {}, 1000, DID, MAILBOX), candidates[1]);
+  assert.equal(directProtocolDecision(candidates[1].source, DID, MAILBOX, MAILBOX)?.decision, "reply");
+  assert.equal(directProtocolDecision({ text: "How is the weather?" }, DID, MAILBOX, MAILBOX), null);
+});

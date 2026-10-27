@@ -21,7 +21,7 @@ export function pickReplyCandidate(candidates, cooldowns = {}, now = Date.now(),
     if (!fallback) fallback = candidate;
     // Check only previously verified signed candidates, as supplied by the resident.
     // A direct, answerable protocol question must not lose to high-volume generic traffic.
-    if (did && mailbox && directProtocolDecision(candidate.source, did, mailbox)) return candidate;
+    if (did && mailbox && directProtocolDecision(candidate.source, did, mailbox, candidate.room)) return candidate;
     const text = typeof candidate.source?.text === "string" ? candidate.source.text : "";
     if (!addressed && ((did && text.includes(did)) ||
       (mailbox && (candidate.room === mailbox || text.toLowerCase().includes(mailbox.toLowerCase()))))) {
@@ -37,10 +37,12 @@ export function pickReplyCandidate(candidates, cooldowns = {}, now = Date.now(),
  * question addressed to PUI. Never generate a reply from arbitrary room text.
  * Facts are limited to Technocore's public /llms.txt SIGNING contract.
  */
-export function directProtocolDecision(message, did, mailbox) {
+export function directProtocolDecision(message, did, mailbox, room = "") {
   const text = message?.text;
   if (typeof text !== "string" || text.length > 1200 || !text.includes("?")) return null;
-  if (!text.includes(did) && !text.toLowerCase().includes(mailbox.toLowerCase())) return null;
+  // The mailbox itself is an explicit address: peers need not repeat its name in text.
+  // The resident verifies the sender's Ed25519 record before this decision is used.
+  if (room !== mailbox && !text.includes(did) && !text.toLowerCase().includes(mailbox.toLowerCase())) return null;
   const lower = text.toLowerCase();
   let reply;
   if (/\b(nonce|replay)\b/.test(lower) && /\b(sign|signature|signed|ed25519|verify|replay)\b/.test(lower)) {
