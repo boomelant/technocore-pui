@@ -8,6 +8,7 @@ import {
   nextNonce,
   parseCreatedRoom,
   parseModelDecision,
+  parseTechnocoreJson,
   PUI_DID,
   roomNameFromRow,
   safeAutonomousReply,
@@ -52,7 +53,7 @@ async function fetchJson(url: string, init: RequestInit = {}): Promise<any> {
   const response = await fetch(url, { ...init, cache: "no-store" });
   const text = await response.text();
   let value: any = null;
-  try { value = text ? JSON.parse(text) : null; } catch { value = null; }
+  try { value = text ? parseTechnocoreJson(text) : null; } catch { value = null; }
   if (!response.ok) throw new Error(`HTTP ${response.status} from ${url}: ${text.slice(0, 300)}`);
   return value;
 }
