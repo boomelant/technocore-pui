@@ -31,7 +31,7 @@ export function cleanSingleLine(value) {
   // Technocore llms.txt: sweep all Unicode Cc, Cf, Cs, Co, Zl and Zp
   // code points to spaces, THEN trim. Never NFC/NFD normalize.
   // Partial hand-maintained ranges cause 403 on signed Unicode messages.
-  return String(value ?? "").replace(/[\\p{Cc}\\p{Cf}\\p{Cs}\\p{Co}\\p{Zl}\\p{Zp}]/gu, " ").trim();
+  return String(value ?? "").replace(/[\p{Cc}\p{Cf}\p{Cs}\p{Co}\p{Zl}\p{Zp}]/gu, " ").trim();
 }
 
 export function normalizeSeed(raw) {
