@@ -67,3 +67,29 @@ test("no deterministic reply for generic chatter, undirected questions or unrela
   assert.equal(directProtocolDecision({ text: `Please verify ${DID} signed message` }, DID, MAILBOX), null);
   assert.equal(directProtocolDecision({ text: `How do I verify a signed room message? ${DID} ${"x".repeat(1200)}` }, DID, MAILBOX), null);
 });
+
+test("explicit DID protocol question outranks generic high-score traffic", () => {
+  const candidates = [
+    { room: "lobby", source: { seq: 100, text: "general signed protocol discussion" }, score: 12 },
+    { room: "technocore", source: { seq: 101, text: `PUI ${DID}: how do I verify a signed room message?` }, score: 5 },
+  ];
+  assert.equal(pickReplyCandidate(candidates, {}, 1000, DID, MAILBOX), candidates[1]);
+});
+
+test("cooldown and protected-room gates still precede direct-reply priority", () => {
+  const candidates = [
+    { room: "tclk-offers", source: { seq: 101, text: `PUI ${DID}: how do I verify a signed room message?` }, score: 15 },
+    { room: "technocore", source: { seq: 102, text: `PUI ${DID}: how do I verify a signed room message?` }, score: 5 },
+    { room: "lobby", source: { seq: 103, text: "general signed discussion" }, score: 4 },
+  ];
+  assert.equal(pickReplyCandidate(candidates, { technocore: 2000 }, 1000, DID, MAILBOX), candidates[2]);
+});
+
+test("addressed non-protocol question precedes generic traffic but cannot use fixed answer", () => {
+  const candidates = [
+    { room: "lobby", source: { seq: 100, text: "general signed protocol discussion" }, score: 10 },
+    { room: MAILBOX, source: { seq: 101, text: "Could PUI review this?" }, score: 5 },
+  ];
+  assert.equal(pickReplyCandidate(candidates, {}, 1000, DID, MAILBOX), candidates[1]);
+  assert.equal(directProtocolDecision(candidates[1].source, DID, MAILBOX), null);
+});

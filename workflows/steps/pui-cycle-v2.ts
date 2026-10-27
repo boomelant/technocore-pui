@@ -352,7 +352,7 @@ export async function observeAndDecideStep(state: PuiCloudState) {
   const addressed = (m: Message) => String(m.text ?? "").includes(PUI_DID) || String(m.text ?? "").includes(state.mailbox);
   candidates.sort((a, b) => Number(addressed(b.source)) - Number(addressed(a.source)) || b.score - a.score || Number(b.source.seq ?? 0) - Number(a.source.seq ?? 0));
   const topObserved = candidates[0];
-  const replyCandidate = pickReplyCandidate(candidates, state.cooldowns, now) as Candidate | null;
+  const replyCandidate = pickReplyCandidate(candidates, state.cooldowns, now, PUI_DID, state.mailbox) as Candidate | null;
   let action: ReplyAction | null = null; let modelDecision: ModelDecision | null = null;
   if (replyCandidate) {
     const context = await readRoom(replyCandidate.room, Math.max(0, Number(replyCandidate.source.seq ?? 1) - 30), 30).catch((): Message[] => []);

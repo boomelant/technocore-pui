@@ -9,16 +9,26 @@ export const GENERATIVE_FREE_MODELS = [
   "poolside/laguna-s-2.1-free",
 ];
 
-export function pickReplyCandidate(candidates, cooldowns = {}, now = Date.now()) {
+export function pickReplyCandidate(candidates, cooldowns = {}, now = Date.now(), did = "", mailbox = "") {
   if (!Array.isArray(candidates)) return null;
+  let fallback = null;
+  let addressed = null;
   for (const candidate of candidates) {
     if (!candidate || typeof candidate.room !== "string") continue;
     if (PROTECTED_REPLY_ROOMS.has(candidate.room)) continue;
     const cooldownUntil = Number(cooldowns?.[candidate.room] ?? 0);
     if (!Number.isFinite(cooldownUntil) || now < cooldownUntil) continue;
-    return candidate;
+    if (!fallback) fallback = candidate;
+    // Check only previously verified signed candidates, as supplied by the resident.
+    // A direct, answerable protocol question must not lose to high-volume generic traffic.
+    if (did && mailbox && directProtocolDecision(candidate.source, did, mailbox)) return candidate;
+    const text = typeof candidate.source?.text === "string" ? candidate.source.text : "";
+    if (!addressed && ((did && text.includes(did)) ||
+      (mailbox && (candidate.room === mailbox || text.toLowerCase().includes(mailbox.toLowerCase()))))) {
+      addressed = candidate;
+    }
   }
-  return null;
+  return addressed ?? fallback;
 }
 
 
