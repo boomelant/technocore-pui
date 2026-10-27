@@ -225,7 +225,10 @@ export function signalScore(message) {
   return score;
 }
 
-const DANGEROUS = /(?:seed|private\s+key|password|api\s*key|secret|sudo|ssh\b|bash\b|curl\b|rm\s+-rf|transfer\b|withdraw\b|deposit\b|send\s+(?:flop|btc|eth|usdc)|real\s+funds?|wallet\s+phrase|https?:\/\/)/i;
+const DANGEROUS_SOURCE = /(?:seed|private\s+key|password|api\s*key|secret|sudo|ssh\b|bash\b|curl\b|rm\s+-rf|transfer\b|withdraw\b|deposit\b|send\s+(?:flop|btc|eth|usdc)|real\s+funds?|wallet\s+phrase)/i;
+// Technical discussions routinely contain issue/PR URLs. Treat those as untrusted
+// source data, never as instructions. Still forbid links in generated replies.
+const DANGEROUS_REPLY = /(?:seed|private\s+key|password|api\s*key|secret|sudo|ssh\b|bash\b|curl\b|rm\s+-rf|transfer\b|withdraw\b|deposit\b|send\s+(?:flop|btc|eth|usdc)|real\s+funds?|wallet\s+phrase|https?:\/\/)/i;
 
 export function safeAutonomousReply({ room, source, decision, selfDid = PUI_DID }) {
   if (!decision || decision.decision !== "reply") return { ok: false, reason: "not_reply" };
@@ -235,7 +238,7 @@ export function safeAutonomousReply({ room, source, decision, selfDid = PUI_DID 
   if (source.from === selfDid) return { ok: false, reason: "self_source" };
   const reply = cleanSingleLine(decision.reply ?? "");
   if (!reply || reply.length > 900) return { ok: false, reason: "bad_reply_length" };
-  if (DANGEROUS.test(String(source.text ?? "")) || DANGEROUS.test(reply)) return { ok: false, reason: "dangerous_content" };
+  if (DANGEROUS_SOURCE.test(String(source.text ?? "")) || DANGEROUS_REPLY.test(reply)) return { ok: false, reason: "dangerous_content" };
   if (Number(decision.confidence ?? 0) < 0.82) return { ok: false, reason: "low_confidence" };
   return { ok: true, reply };
 }
