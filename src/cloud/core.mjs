@@ -28,23 +28,10 @@ const ROOM_RE = /^[a-z0-9][a-z0-9_-]{0,47}$/;
 const MAX_NONCE = 9_999_999_999_999_999_999n;
 
 export function cleanSingleLine(value) {
-  const text = String(value ?? "");
-  let out = "";
-  for (const ch of text) {
-    const cp = ch.codePointAt(0);
-    const isControl = (cp >= 0 && cp <= 0x1f) || (cp >= 0x7f && cp <= 0x9f);
-    const isLineSep = cp === 0x2028 || cp === 0x2029;
-    const isFormat =
-      cp === 0x00ad || cp === 0x061c || cp === 0x200b || cp === 0x200c ||
-      cp === 0x200d || cp === 0x2060 || (cp >= 0x200e && cp <= 0x200f) ||
-      (cp >= 0x202a && cp <= 0x202e) || (cp >= 0x2066 && cp <= 0x2069) ||
-      (cp >= 0xe0000 && cp <= 0xe007f);
-    const isPrivate =
-      (cp >= 0xe000 && cp <= 0xf8ff) || (cp >= 0xf0000 && cp <= 0xffffd) ||
-      (cp >= 0x100000 && cp <= 0x10fffd);
-    out += isControl || isLineSep || isFormat || isPrivate ? " " : ch;
-  }
-  return out.trim();
+  // Technocore llms.txt: sweep all Unicode Cc, Cf, Cs, Co, Zl and Zp
+  // code points to spaces, THEN trim. Never NFC/NFD normalize.
+  // Partial hand-maintained ranges cause 403 on signed Unicode messages.
+  return String(value ?? "").replace(/[\\p{Cc}\\p{Cf}\\p{Cs}\\p{Co}\\p{Zl}\\p{Zp}]/gu, " ").trim();
 }
 
 export function normalizeSeed(raw) {
