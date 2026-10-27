@@ -18,6 +18,7 @@ import {
 } from "@/src/cloud/core.mjs";
 import {
   GENERATIVE_FREE_MODELS,
+  cursorCoverageGaps,
   modelFailureDiagnostic,
   pickReplyCandidate,
   PUI_RESIDENT_REVISION,
@@ -322,9 +323,20 @@ export async function observeAndDecideStep(state: PuiCloudState) {
     .slice(0, MAX_WATCH_ROOMS);
   const roomCursors = { ...state.roomCursors };
   const candidates: Candidate[] = [];
+  const coverageGaps: Array<{ room: string; firstMissing: number; lastMissing: number; missed: number; additionalGaps: number }> = [];
+  const roomReadFailures: Array<{ room: string; kind: string }> = [];
   let observed = 0;
   for (const room of watchRooms) {
-    const messages = await readRoom(room, roomCursors[room] ?? null, MAX_MESSAGES_PER_ROOM).catch((): Message[] => []);
+    const priorCursor = roomCursors[room] ?? null;
+    let messages: Message[];
+    try {
+      messages = await readRoom(room, priorCursor, MAX_MESSAGES_PER_ROOM);
+    } catch (error: any) {
+      roomReadFailures.push({ room, kind: String(error?.name ?? "error").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 40) });
+      continue;
+    }
+    const gaps = cursorCoverageGaps(priorCursor, messages);
+    if (gaps.length) coverageGaps.push({ room, ...gaps[0], additionalGaps: gaps.length - 1 });
     for (const message of messages) {
       if (typeof message.seq === "number") roomCursors[room] = Math.max(roomCursors[room] ?? 0, message.seq);
       observed += 1;
@@ -364,6 +376,9 @@ export async function observeAndDecideStep(state: PuiCloudState) {
   const status = {
     protocol: "PUI-CLOUD-RESIDENT/2", revision: PUI_RESIDENT_REVISION, did: PUI_DID, holder: state.holder, at: new Date().toISOString(),
     cycle: nextState.cycle, presence, watchRooms, observedThisCycle: observed,
+    // Public room sequence numbers only: no seed, signature or message body.
+    roomCursors: Object.fromEntries(watchRooms.map((room) => [room, roomCursors[room] ?? null])),
+    coverageGaps, roomReadFailures,
     totalObserved: nextState.totalObserved, totalReplies: nextState.totalReplies,
     candidate: topObserved ? { room: topObserved.room, seq: topObserved.source.seq, score: topObserved.score } : null,
     replyCandidate: replyCandidate ? { room: replyCandidate.room, seq: replyCandidate.source.seq, score: replyCandidate.score } : null,
