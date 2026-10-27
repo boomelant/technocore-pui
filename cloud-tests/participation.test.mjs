@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   GENERATIVE_FREE_MODELS,
+  directProtocolDecision,
   modelFailureDiagnostic,
   pickReplyCandidate,
 } from "../src/cloud/participation.mjs";
@@ -41,4 +42,74 @@ test("generateText fallbacks are explicit non-billing free IDs and exclude Laya"
 test("model failure diagnostic exposes status without leaking message text", () => {
   const error = Object.assign(new Error("secret bearer token should never appear"), { name: "AI_APICallError", statusCode: 401 });
   assert.equal(modelFailureDiagnostic("inclusionai/ling-3.0-tiny-free", error), "inclusionai/ling-3.0-tiny-free: AI_APICallError HTTP 401");
+});
+
+const DID = "did:key:z6Mkub4QuoxnRWkzjKLmJtcikyoYjVEhrZVtvs2EA3PX1N3f";
+const MAILBOX = "mb-pui-1c42fed95c";
+
+test("explicit DID-addressed signature question has a useful zero-model answer", () => {
+  const decision = directProtocolDecision({ text: `PUI ${DID}: how do I verify a signed room message?` }, DID, MAILBOX);
+  assert.equal(decision?.decision, "reply");
+  assert.equal(decision?.model, "protocol-rules");
+  assert.match(decision?.reply ?? "", /room\|nonce\|text/);
+  assert.match(decision?.reply ?? "", /seq is server-assigned/);
+});
+
+test("direct nonce question answers the replay/nonce contract without model", () => {
+  const decision = directProtocolDecision({ text: `To ${MAILBOX}: how should signed nonce replay be checked?` }, DID, MAILBOX);
+  assert.equal(decision?.decision, "reply");
+  assert.match(decision?.reply ?? "", /must increase/);
+});
+
+test("no deterministic reply for generic chatter, undirected questions or unrelated direct asks", () => {
+  assert.equal(directProtocolDecision({ text: "How do I verify a signed room message?" }, DID, MAILBOX), null);
+  assert.equal(directProtocolDecision({ text: `Hello ${DID}, how are you?` }, DID, MAILBOX), null);
+  assert.equal(directProtocolDecision({ text: `Please verify ${DID} signed message` }, DID, MAILBOX), null);
+  assert.equal(directProtocolDecision({ text: `How do I verify a signed room message? ${DID} ${"x".repeat(1200)}` }, DID, MAILBOX), null);
+});
+
+test("explicit DID protocol question outranks generic high-score traffic", () => {
+  const candidates = [
+    { room: "lobby", source: { seq: 100, text: "general signed protocol discussion" }, score: 12 },
+    { room: "technocore", source: { seq: 101, text: `PUI ${DID}: how do I verify a signed room message?` }, score: 5 },
+  ];
+  assert.equal(pickReplyCandidate(candidates, {}, 1000, DID, MAILBOX), candidates[1]);
+});
+
+test("cooldown and protected-room gates still precede direct-reply priority", () => {
+  const candidates = [
+    { room: "tclk-offers", source: { seq: 101, text: `PUI ${DID}: how do I verify a signed room message?` }, score: 15 },
+    { room: "technocore", source: { seq: 102, text: `PUI ${DID}: how do I verify a signed room message?` }, score: 5 },
+    { room: "lobby", source: { seq: 103, text: "general signed discussion" }, score: 4 },
+  ];
+  assert.equal(pickReplyCandidate(candidates, { technocore: 2000 }, 1000, DID, MAILBOX), candidates[2]);
+});
+
+test("addressed non-protocol question precedes generic traffic but cannot use fixed answer", () => {
+  const candidates = [
+    { room: "lobby", source: { seq: 100, text: "general signed protocol discussion" }, score: 10 },
+    { room: MAILBOX, source: { seq: 101, text: "Could PUI review this?" }, score: 5 },
+  ];
+  assert.equal(pickReplyCandidate(candidates, {}, 1000, DID, MAILBOX), candidates[1]);
+  assert.equal(directProtocolDecision(candidates[1].source, DID, MAILBOX), null);
+});
+
+
+test("signed mailbox question needs no redundant DID or mailbox mention", () => {
+  const question = { text: "How do I verify a signed room message?" };
+  assert.equal(directProtocolDecision(question, DID, MAILBOX), null);
+  assert.equal(directProtocolDecision(question, DID, MAILBOX, "lobby"), null);
+  const decision = directProtocolDecision(question, DID, MAILBOX, MAILBOX);
+  assert.equal(decision?.decision, "reply");
+  assert.match(decision?.reply ?? "", /room\\|nonce\\|text/);
+});
+
+test("mailbox protocol question outranks generic traffic without a model", () => {
+  const candidates = [
+    { room: "lobby", source: { seq: 100, text: "generic signed protocol discussion" }, score: 12 },
+    { room: MAILBOX, source: { seq: 101, text: "How should signed nonce replay be checked?" }, score: 5 },
+  ];
+  assert.equal(pickReplyCandidate(candidates, {}, 1000, DID, MAILBOX), candidates[1]);
+  assert.equal(directProtocolDecision(candidates[1].source, DID, MAILBOX, MAILBOX)?.decision, "reply");
+  assert.equal(directProtocolDecision({ text: "How is the weather?" }, DID, MAILBOX, MAILBOX), null);
 });
